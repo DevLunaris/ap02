@@ -151,13 +151,15 @@ Statisches Mermaid-Diagramm. `code` als Template-Literal.
 Mermaid links tippen, rechts Live-Vorschau. Bewusst ohne automatische Bewertung -
 Diagramme haben mehrere richtige Darstellungen.
 
-### `<PseudocodeTracer code task? expectedOutput? variables? initialVariables? title?>`
-> Engine folgt in **Phase 2**. Props sind final, Inhalte können schon geschrieben werden.
+### `<PseudocodeTracer code task? expectedOutput? variables? initialVariables? editable? title?>`
 
 - `code` - Pseudocode im deutschen IHK-Dialekt
 - `expectedOutput: string[]` - je Eintrag eine Ausgabezeile. Gesetzt = Übungsmodus.
 - `variables?: string[]` - erzwingt Spaltenreihenfolge der Wertetabelle
 - `initialVariables?` - Startzustand, z. B. Funktionsparameter
+- `editable?` - eigenen Code eintippen erlauben (Standard: `true`)
+
+Siehe [Die Pseudocode-Engine](#die-pseudocode-engine).
 
 ### `<SqlExercise schema solution task starter? hint? compareTables? title?>`
 > Engine folgt in **Phase 3** (sql.js, clientseitig).
@@ -181,6 +183,67 @@ Attributen. Ohne Gegenmaßnahme kämen `code={…}`, `options={[…]}` und `item
 als `undefined` an. Deshalb steht in [lib/content/mdx.tsx](lib/content/mdx.tsx)
 `blockJS: false`. Die Härtung zielt auf fremde, hochgeladene Inhalte; unsere MDX-Dateien
 liegen im Repo. `blockDangerousJS` bleibt aktiv und sperrt `eval`, `process`, `fs` & Co.
+
+## Die Pseudocode-Engine
+
+Liegt unter [lib/pseudocode/](lib/pseudocode/) und ist frei von React und Node-APIs -
+dadurch vollständig als reine Funktion testbar.
+
+```
+tokenize(quelltext) → Token[]      tokenizer.ts
+parse(quelltext)    → AST          parser.ts
+run(quelltext)      → RunResult    interpreter.ts
+```
+
+### Die tragende Entscheidung: vorberechnete Spur
+
+Das Programm läuft **einmal komplett durch**, die vollständige Schrittfolge landet in
+einem Array. Die UI navigiert danach nur noch per Index.
+
+Der naheliegende Weg - ein pausierbarer Interpreter mit Generatoren - scheitert an der
+Anforderung „Schritt zurück": Generatoren können nicht rückwärts, man müsste für jeden
+Klick von vorn rechnen. Der Vorab-Durchlauf ist möglich, weil der Dialekt **keine
+Eingabe-Anweisung** kennt - es gibt nichts, worauf gewartet werden müsste.
+
+Drei Dinge werden dadurch trivial: Vor/Zurück/Springen/Auto-Play, der Übungsmodus
+(erste Abweichung finden = Array-Vergleich) und das Testen.
+
+Bei einer Zuweisung an ein Array-Element wird **kopiert statt mutiert**
+(copy-on-write) - sonst würden ältere Schritte in der Spur nachträglich ihren Zustand
+ändern.
+
+### Toleranz gegenüber dem Dialekt
+
+Der IHK-Pseudocode ist nicht normiert. Der Tokenizer normalisiert deshalb auf eine
+kanonische Form; welche Varianten akzeptiert werden, legen die Tests fest:
+
+| Kanonisch | Wird auch akzeptiert |
+| --- | --- |
+| `←` | `<-`, `:=`, `=` (nur am Anweisungsanfang) |
+| `WENN` … `ENDE WENN` | `if`/`then`/`end if`, `ENDEWENN`, `DANN` weglassbar |
+| `FÜR` | `FUER`, `for`, `VON`/`from`, `BIS`/`to`, `SCHRITT`/`step` |
+| `SOLANGE` / `WIEDERHOLE` | `while` / `repeat`, `TUE`/`do` weglassbar |
+| `GIB x AUS` | `AUSGABE x`, `print x`, `schreibe x` |
+| `GIB x ZURÜCK` | `return x` |
+| `UND` / `ODER` / `NICHT` | `and` / `or` / `not` |
+
+`=` ist doppeldeutig: am Anfang einer Anweisung Zuweisung, im Ausdruck Vergleich. Der
+Parser setzt dafür einen Rücksetzpunkt - siehe `parseAssignOrExpression`.
+
+Eingebaut sind `Länge()`/`length()`, `abs()` und `ganzzahl()`.
+
+### Grenzen
+
+10.000 Schritte und Aufruftiefe 200. Beides bricht mit einer Meldung ab, die den
+wahrscheinlichen Grund nennt (Endlosschleife, Rekursion ohne Abbruch) - und die
+**Teilspur bleibt erhalten**, man sieht also, wie weit das Programm kam.
+
+### Fehlermeldungen
+
+Sie richten sich an Lernende, nicht an Compilerbauer: „Der Block `WENN` aus Zeile 1
+wurde nie geschlossen - es fehlt `ENDE WENN`." Wer eine Bedingung mit einer Zahl statt
+eines Wahrheitswerts füttert, bekommt zusätzlich den Hinweis auf die Verwechslung von
+`=` und `←`. Beim Erweitern des Parsers bitte in diesem Stil bleiben.
 
 ## Code-Ausführung
 
@@ -210,10 +273,12 @@ docker exec ap2-piston /piston/piston ppman install dotnet   # einmalig
 
 - **Phase 1 - Gerüst: fertig.** Setup, MDX-Pipeline, Themen-Index (89 Themen), alle Seiten,
   Theme-System, CodeRunner-Interface, Docker.
-- **Phase 2 - Pseudocode-Engine:** Tokenizer, Parser, Step-Interpreter in
-  `lib/pseudocode/`, Vitest für alle Kontrollstrukturen, danach die Tracer-UI mit
-  Wertetabelle. Endlosschleifen nach 10.000 Schritten abbrechen.
+- **Phase 2 - Pseudocode-Engine: fertig.** Tokenizer, Parser und Step-Interpreter in
+  `lib/pseudocode/` mit 55 Tests, dazu die Tracer-UI mit Wertetabelle, Auto-Play und
+  Übungsmodus. Code ist im Tracer editierbar (derzeit Textfeld).
 - **Phase 3 - SQL- und C#-Engine:** sql.js + Monaco, Piston-Anbindung.
+  Dabei den Tracer von der Textarea auf Monaco umstellen - inklusive einer eigenen
+  Syntax-Definition für den IHK-Dialekt.
 - **Phase 4 - drei Musterthemen:** `pseudocode`, `sql-select`, `aktivitaetsdiagramm`.
 - **Phase 5 - Lern-Features:** `useProgress()` auf localStorage mit JSON-Export/Import,
   Statusknöpfe, Übungspool, FlexSearch, Tastaturkürzel.

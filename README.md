@@ -8,9 +8,10 @@ Fachinformatiker/-in Anwendungsentwicklung.
 SQL gegen eine echte Datenbank absetzen, C# kompilieren und gegen Testfälle prüfen.
 Alles auf der eigenen Maschine, ohne Account, ohne Tracking, ohne Cloud.
 
-> **Status: Phase 1 (Gerüst) ist fertig.** Themenstruktur, MDX-Pipeline, Navigation und
-> Deployment stehen. Die drei interaktiven Engines entstehen als Nächstes – siehe
-> [Fahrplan](#fahrplan). Ein ausgearbeitetes Beispielthema (`pseudocode`) ist dabei.
+> **Status: Phase 2 ist fertig.** Der Pseudocode-Interpreter läuft – Code Schritt für
+> Schritt durchspielen, mit automatisch mitwachsender Wertetabelle, Auto-Play und
+> Übungsmodus. Du kannst auch eigenen Pseudocode aus alten Prüfungen eintippen und
+> tracen. SQL- und C#-Engine folgen – siehe [Fahrplan](#fahrplan).
 
 ---
 
@@ -23,7 +24,7 @@ Hier ist jede Übung interaktiv:
 
 | Engine | Was sie macht |
 | --- | --- |
-| `<PseudocodeTracer />` | Eigener Interpreter für den deutschen IHK-Pseudocode. Läuft schrittweise, baut die Wertetabelle automatisch mit, Schritt vor/zurück. |
+| `<PseudocodeTracer />` ✅ | Eigener Interpreter für den deutschen IHK-Pseudocode. Läuft schrittweise, baut die Wertetabelle automatisch mit, Schritt vor/zurück, Auto-Play. Eigenen Code eintippen möglich. |
 | `<SqlExercise />` | SQLite im Browser (sql.js). Eigenes Seed-Schema pro Aufgabe, automatischer Abgleich mit der Musterlösung. |
 | `<CSharpExercise />` | Echte Kompilierung über eine selbst gehostete [Piston](https://github.com/engineer-man/piston)-Instanz, Prüfung gegen Testfälle. |
 
@@ -202,8 +203,8 @@ implementieren, fertig – keine UI-Komponente muss angefasst werden.
 
 - [x] **Phase 1 – Gerüst:** Setup, MDX-Pipeline, Themen-Index, alle Seiten, Dark Mode,
       CodeRunner-Interface, Docker
-- [ ] **Phase 2 – Pseudocode-Engine:** Tokenizer, Parser, Step-Interpreter mit
-      Unit-Tests, danach die Tracer-UI mit Wertetabelle
+- [x] **Phase 2 – Pseudocode-Engine:** Tokenizer, Parser und Step-Interpreter mit
+      55 Tests, Tracer-UI mit Wertetabelle, Auto-Play und Übungsmodus
 - [ ] **Phase 3 – SQL- und C#-Engine:** sql.js und Monaco, Piston-Anbindung
 - [ ] **Phase 4 – Musterthemen:** `pseudocode`, `sql-select`, `aktivitaetsdiagramm` als
       Qualitätsmaßstab
