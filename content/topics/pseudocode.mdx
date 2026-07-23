@@ -1,0 +1,177 @@
+---
+slug: pseudocode
+title: Pseudocode
+summary: >-
+  Sprachunabhängige Notation für Algorithmen. Das mit Abstand häufigste Thema in
+  "Entwicklung und Umsetzung von Algorithmen" - meist als Schreibtischtest.
+learningGoals:
+  - Einen gegebenen Algorithmus in Pseudocode formulieren
+  - Fremden Pseudocode per Schreibtischtest Schritt für Schritt nachvollziehen
+  - Kontrollstrukturen korrekt schachteln und sauber abschließen
+  - Die IHK-Konventionen einhalten, damit keine Punkte verschenkt werden
+related:
+  - kontrollstrukturen
+  - rekursion
+  - suchen-sortieren
+---
+
+Pseudocode ist die Brücke zwischen Gedanke und Programm: strukturiert genug, um einen
+Algorithmus eindeutig zu beschreiben, aber ohne die Syntaxregeln einer konkreten Sprache.
+In der Prüfung ist er der Standard, weil er unabhängig davon funktioniert, ob du Java,
+C# oder Python gelernt hast.
+
+<Callout type="merksatz" title="Warum das Thema so viel bringt">
+  Pseudocode ist der Dauergast in GA2. Wer sicher tracen kann, holt hier zuverlässig
+  Punkte - und zwar auch dann, wenn der dargestellte Algorithmus selbst unbekannt ist.
+  Tracen ist eine mechanische Fertigkeit, kein Ratespiel.
+</Callout>
+
+## Kernbegriffe
+
+<TermGrid>
+  <TermCard term="Algorithmus">
+    Eindeutige, endliche Handlungsvorschrift zur Lösung eines Problems. Muss terminieren
+    und bei gleicher Eingabe stets das gleiche Ergebnis liefern.
+  </TermCard>
+  <TermCard term="Pseudocode">
+    Halbformale Notation zwischen natürlicher Sprache und Programmiersprache. Nicht
+    ausführbar, aber eindeutig lesbar.
+  </TermCard>
+  <TermCard term="Schreibtischtest">
+    Manuelles Durchspielen eines Algorithmus mit konkreten Werten. Der Zustand aller
+    Variablen wird dabei in einer Wertetabelle mitgeführt.
+  </TermCard>
+  <TermCard term="Wertetabelle">
+    Tabelle mit einer Spalte je Variable und einer Zeile je Durchlauf. Zusätzlich eine
+    Spalte für die Ausgabe.
+  </TermCard>
+</TermGrid>
+
+## Notation
+
+Die IHK nutzt eine deutschsprachige Notation. Sie ist nicht bis ins Detail normiert -
+diese Varianten solltest du aber lesen und schreiben können:
+
+| Konstrukt | Schreibweise |
+| --- | --- |
+| Zuweisung | `summe ← 0` (auch `:=` oder `=`) |
+| Verzweigung | `WENN … DANN` / `SONST WENN` / `SONST` / `ENDE WENN` |
+| Kopfgesteuerte Schleife | `SOLANGE … TUE` / `ENDE SOLANGE` |
+| Fußgesteuerte Schleife | `WIEDERHOLE` / `BIS …` |
+| Zählschleife | `FÜR i VON 1 BIS n [SCHRITT s] TUE` / `ENDE FÜR` |
+| Funktion | `FUNKTION name(p: TYP) → TYP` / `GIB x ZURÜCK` / `ENDE FUNKTION` |
+| Ausgabe | `GIB x AUS` |
+| Operatoren | `MOD`, `DIV`, `UND`, `ODER`, `NICHT` |
+
+<Callout type="achtung" title="Kopf- oder fußgesteuert - der Unterschied zählt">
+  `SOLANGE` prüft **vor** dem ersten Durchlauf und kann null Mal laufen.
+  `WIEDERHOLE … BIS` prüft **danach** und läuft immer mindestens einmal. Diese
+  Unterscheidung ist ein Klassiker in Multiple-Choice-Fragen.
+</Callout>
+
+## Der Schreibtischtest
+
+Die Methode ist immer dieselbe:
+
+1. Für jede Variable eine Spalte anlegen, dazu eine Spalte „Ausgabe".
+2. Startwerte eintragen.
+3. Zeile für Zeile abarbeiten und **nach jeder Zuweisung** eine neue Zeile schreiben.
+4. Bei jeder Bedingung notieren, ob sie wahr oder falsch war.
+5. Nichts im Kopf rechnen - genau da entstehen die Fehler.
+
+<PseudocodeTracer
+  title="Beispiel: Summe von 1 bis 5"
+  task="Verfolge, wie sich summe und i über die Durchläufe verändern."
+  code={`summe ← 0
+FÜR i VON 1 BIS 5 TUE
+  summe ← summe + i
+ENDE FÜR
+GIB summe AUS`}
+  expectedOutput={['15']}
+/>
+
+## Stolperfallen
+
+<Callout type="achtung" title="Die fünf teuersten Fehler">
+  1. **Off-by-One**: `VON 1 BIS n` läuft n Mal, `VON 0 BIS n` läuft n+1 Mal.
+  2. **Endlosschleife**: Die Zählvariable wird im `SOLANGE`-Rumpf nicht verändert.
+  3. **Indexgrenzen**: Bei Arrays der Länge n ist der letzte gültige Index n-1 - sofern
+     die Aufgabe bei 0 beginnt. Steht in der Angabe nichts, kurz begründen, was du annimmst.
+  4. **Zuweisung statt Vergleich**: `←` weist zu, `=` vergleicht. In Bedingungen nie `←`.
+  5. **Fehlender Abschluss**: Jedes `WENN` braucht ein `ENDE WENN`, jede Schleife ihr Ende.
+</Callout>
+
+## Übungen
+
+<PseudocodeTracer
+  title="Übung 1: Was gibt dieser Algorithmus aus?"
+  task="Führe einen Schreibtischtest durch und trage die vollständige Ausgabe ein - eine Zahl je Zeile."
+  code={`n ← 12
+i ← 1
+SOLANGE i <= n TUE
+  WENN n MOD i = 0 DANN
+    GIB i AUS
+  ENDE WENN
+  i ← i + 1
+ENDE SOLANGE`}
+  expectedOutput={['1', '2', '3', '4', '6', '12']}
+/>
+
+<MultipleChoice
+  question="Welche Aussagen über Schleifen im IHK-Pseudocode sind richtig?"
+  options={[
+    {
+      text: 'WIEDERHOLE … BIS wird mindestens einmal durchlaufen.',
+      correct: true,
+      explanation:
+        'Die Bedingung steht am Ende, der Rumpf läuft also vor der ersten Prüfung - fußgesteuert.',
+    },
+    {
+      text: 'SOLANGE … TUE kann null Mal durchlaufen werden.',
+      correct: true,
+      explanation:
+        'Ist die Bedingung schon beim ersten Test falsch, wird der Rumpf übersprungen - kopfgesteuert.',
+    },
+    {
+      text: 'FÜR i VON 1 BIS 5 TUE durchläuft den Rumpf vier Mal.',
+      correct: false,
+      explanation:
+        'Es sind fünf Durchläufe (1, 2, 3, 4, 5). Beide Grenzen sind eingeschlossen - ein typischer Off-by-One-Fehler.',
+    },
+    {
+      text: 'Eine Zählschleife lässt sich immer durch eine SOLANGE-Schleife ersetzen.',
+      correct: true,
+      explanation:
+        'Man initialisiert die Zählvariable vorher, prüft sie in der Bedingung und erhöht sie am Rumpfende. Umgekehrt geht es nicht immer.',
+    },
+  ]}
+/>
+
+<FreeText
+  question={
+    <>
+      Erkläre in zwei bis drei Sätzen, warum ein Algorithmus <strong>terminieren</strong> muss
+      und woran du im Pseudocode erkennst, dass eine Schleife das nicht tut.
+    </>
+  }
+  solution={
+    <>
+      Ein Algorithmus muss nach endlich vielen Schritten enden, sonst liefert er nie ein
+      Ergebnis und erfüllt die Definition nicht. Im Pseudocode erkennt man drohende
+      Nicht-Terminierung daran, dass keine Anweisung im Schleifenrumpf die Abbruchbedingung
+      beeinflusst - typischerweise, weil die Zählvariable nicht verändert wird oder in die
+      falsche Richtung läuft.
+    </>
+  }
+/>
+
+<Checklist
+  items={[
+    'Jede Variable vor der ersten Verwendung initialisiert',
+    'Jede Schleife hat eine Bedingung, die sich im Rumpf verändert',
+    'Jedes WENN / SOLANGE / FÜR ist sauber abgeschlossen',
+    '← für Zuweisung, = für Vergleich - konsequent getrennt',
+    'Bei Arrays geprüft, ob die Indizierung bei 0 oder 1 beginnt',
+    'Schreibtischtest mit einem kleinen Beispiel gegengerechnet',
+  ]}
+/>

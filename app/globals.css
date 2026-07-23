@@ -1,0 +1,201 @@
+@import 'tailwindcss';
+
+/* Dark Mode wird per Klasse am <html> geschaltet (next-themes), nicht per Media Query. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-sans:
+    ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial,
+    sans-serif;
+  --font-mono: ui-monospace, 'Cascadia Code', 'Source Code Pro', Menlo, Consolas, monospace;
+}
+
+/*
+ * Farbrollen statt roher Paletten-Werte. Jede Komponente nutzt diese Variablen,
+ * dadurch stimmt der Dark Mode automatisch - ohne dark:-Varianten überall.
+ */
+:root {
+  --surface: oklch(99% 0.003 250);
+  --surface-raised: oklch(100% 0 0);
+  --surface-sunken: oklch(96.5% 0.005 250);
+  --border: oklch(91% 0.008 250);
+  --border-strong: oklch(84% 0.012 250);
+  --text: oklch(24% 0.02 255);
+  --text-muted: oklch(52% 0.018 255);
+  --accent: oklch(52% 0.19 258);
+  --accent-soft: oklch(95% 0.03 258);
+  --accent-text: oklch(44% 0.19 258);
+}
+
+.dark {
+  --surface: oklch(19% 0.015 258);
+  --surface-raised: oklch(23% 0.017 258);
+  --surface-sunken: oklch(16% 0.014 258);
+  --border: oklch(31% 0.018 258);
+  --border-strong: oklch(40% 0.02 258);
+  --text: oklch(94% 0.006 250);
+  --text-muted: oklch(70% 0.015 255);
+  --accent: oklch(72% 0.15 258);
+  --accent-soft: oklch(28% 0.05 258);
+  --accent-text: oklch(80% 0.13 258);
+}
+
+@theme inline {
+  --color-surface: var(--surface);
+  --color-surface-raised: var(--surface-raised);
+  --color-surface-sunken: var(--surface-sunken);
+  --color-line: var(--border);
+  --color-line-strong: var(--border-strong);
+  --color-ink: var(--text);
+  --color-ink-muted: var(--text-muted);
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-text: var(--accent-text);
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background-color: var(--surface);
+    color: var(--text);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Verhindert das Aufblitzen der hellen Variante vor der Hydration. */
+  html.dark {
+    color-scheme: dark;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+}
+
+@layer components {
+  /*
+   * Typografie für gerenderten MDX-Inhalt. Bewusst handgeschrieben statt
+   * @tailwindcss/typography: Der Fließtext steht zwischen interaktiven Übungen,
+   * und prose würde deren Innenleben mitformatieren.
+   */
+  .mdx {
+    line-height: 1.75;
+  }
+
+  .mdx > * + * {
+    margin-top: 1.15rem;
+  }
+
+  .mdx h2 {
+    margin-top: 2.75rem;
+    margin-bottom: 0.25rem;
+    scroll-margin-top: 5rem;
+    border-top: 1px solid var(--border);
+    padding-top: 1.75rem;
+    font-size: 1.5rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+
+  .mdx h3 {
+    margin-top: 2rem;
+    margin-bottom: 0.25rem;
+    scroll-margin-top: 5rem;
+    font-size: 1.175rem;
+    font-weight: 650;
+  }
+
+  .mdx h4 {
+    margin-top: 1.5rem;
+    font-size: 1rem;
+    font-weight: 650;
+  }
+
+  .mdx a {
+    color: var(--accent-text);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
+  .mdx ul,
+  .mdx ol {
+    padding-left: 1.4rem;
+  }
+
+  .mdx ul {
+    list-style: disc;
+  }
+
+  .mdx ol {
+    list-style: decimal;
+  }
+
+  .mdx li + li {
+    margin-top: 0.4rem;
+  }
+
+  .mdx li::marker {
+    color: var(--text-muted);
+  }
+
+  .mdx code {
+    background-color: var(--surface-sunken);
+    border: 1px solid var(--border);
+    border-radius: 0.3rem;
+    padding: 0.1rem 0.35rem;
+    font-family: var(--font-mono);
+    font-size: 0.86em;
+  }
+
+  .mdx pre {
+    overflow-x: auto;
+    border-radius: 0.6rem;
+    border: 1px solid var(--border);
+    background-color: var(--surface-sunken);
+    padding: 1rem 1.15rem;
+    font-size: 0.875rem;
+    line-height: 1.6;
+  }
+
+  .mdx pre code {
+    background: none;
+    border: none;
+    padding: 0;
+    font-size: inherit;
+  }
+
+  .mdx blockquote {
+    border-left: 3px solid var(--border-strong);
+    padding-left: 1rem;
+    color: var(--text-muted);
+    font-style: italic;
+  }
+
+  .mdx table {
+    display: block;
+    width: 100%;
+    overflow-x: auto;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+  }
+
+  .mdx th,
+  .mdx td {
+    border: 1px solid var(--border);
+    padding: 0.5rem 0.75rem;
+    text-align: left;
+  }
+
+  .mdx th {
+    background-color: var(--surface-sunken);
+    font-weight: 650;
+  }
+
+  .mdx hr {
+    border-color: var(--border);
+  }
+}

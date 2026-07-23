@@ -1,0 +1,183 @@
+Diese Seite rendert **jede** verfügbare MDX-Komponente einmal. Sie ist der Beweis, dass die
+MDX-Pipeline inklusive Client-Komponenten funktioniert – und gleichzeitig die Vorlage zum
+Nachschlagen beim Schreiben neuer Themen. Die Props-API steht in `CLAUDE.md`.
+
+## Fließtext
+
+Normaler Absatz mit **fett**, *kursiv*, `inline code` und einem
+[Link auf ein Thema](/thema/pseudocode). Aufzählungen:
+
+- erster Punkt
+- zweiter Punkt
+  - eingerückt
+
+1. nummeriert
+2. und weiter
+
+> Blockzitat für Definitionen aus dem Prüfungsvokabular.
+
+| Spalte | Bedeutung |
+| --- | --- |
+| `←` | Zuweisung |
+| `=` | Vergleich |
+
+```csharp
+// Codeblock mit Sprachangabe
+public static int Add(int a, int b) => a + b;
+```
+
+## Callout
+
+<Callout type="tipp">Ein Tipp, der beim Lösen einer Aufgabe hilft.</Callout>
+
+<Callout type="achtung" title="Klassischer Fehler">
+  Warnung vor einer typischen Falle. Der `title` ist optional.
+</Callout>
+
+<Callout type="merksatz">Ein Satz, den man auswendig können sollte.</Callout>
+
+## TermCard und TermGrid
+
+<TermGrid>
+  <TermCard term="Kohäsion">Wie stark die Bestandteile eines Moduls zusammengehören. Hoch ist gut.</TermCard>
+  <TermCard term="Kopplung">Wie stark Module voneinander abhängen. Niedrig ist gut.</TermCard>
+</TermGrid>
+
+## Diagram
+
+<Diagram
+  caption="Aktivitätsdiagramm mit Verzweigung"
+  code={`flowchart TD
+    Start([Start]) --> Eingabe[Zahl einlesen]
+    Eingabe --> Pruefung{Zahl gerade?}
+    Pruefung -- ja --> Gerade[/"gerade" ausgeben/]
+    Pruefung -- nein --> Ungerade[/"ungerade" ausgeben/]
+    Gerade --> Ende([Ende])
+    Ungerade --> Ende`}
+/>
+
+## MultipleChoice
+
+<MultipleChoice
+  question="Welche Antwort ist richtig? (genau eine)"
+  options={[
+    { text: 'Die richtige Antwort.', correct: true, explanation: 'Begründung, warum das stimmt.' },
+    {
+      text: 'Eine plausible, aber falsche Antwort.',
+      correct: false,
+      explanation: 'Begründung, warum das nicht stimmt - hier liegt der eigentliche Lerneffekt.',
+    },
+  ]}
+/>
+
+<MultipleChoice
+  question="Und hier sind mehrere Antworten richtig."
+  options={[
+    { text: 'Richtig A', correct: true, explanation: 'Weil A.' },
+    { text: 'Richtig B', correct: true, explanation: 'Weil B.' },
+    { text: 'Falsch C', correct: false, explanation: 'C klingt gut, ist es aber nicht, weil …' },
+  ]}
+/>
+
+## FreeText
+
+<FreeText
+  question="Erkläre den Unterschied zwischen Aggregation und Komposition."
+  solution={
+    <>
+      Beides sind Teil-Ganzes-Beziehungen. Bei der <strong>Aggregation</strong> existiert der
+      Teil unabhängig vom Ganzen weiter (leere Raute). Bei der <strong>Komposition</strong>{' '}
+      wird der Teil mit dem Ganzen zerstört (gefüllte Raute).
+    </>
+  }
+/>
+
+## Checklist
+
+<Checklist
+  items={[
+    'Erster Prüfpunkt',
+    'Zweiter Prüfpunkt',
+    'Dritter Prüfpunkt',
+  ]}
+/>
+
+## DiagramExercise
+
+<DiagramExercise
+  task="Zeichne ein Aktivitätsdiagramm für einen Login mit maximal drei Versuchen."
+  starter={`flowchart TD
+    Start([Start]) --> `}
+  solution={`flowchart TD
+    Start([Start]) --> Init[versuche = 0]
+    Init --> Eingabe[Passwort eingeben]
+    Eingabe --> Pruef{Passwort korrekt?}
+    Pruef -- ja --> Erfolg([Angemeldet])
+    Pruef -- nein --> Zaehl[versuche = versuche + 1]
+    Zaehl --> Limit{versuche >= 3?}
+    Limit -- ja --> Sperre([Konto gesperrt])
+    Limit -- nein --> Eingabe`}
+/>
+
+## PseudocodeTracer
+
+<PseudocodeTracer
+  title="Tracer im Übungsmodus"
+  task="Welche Zahlen gibt der Algorithmus aus?"
+  code={`i ← 1
+SOLANGE i <= 3 TUE
+  GIB i * i AUS
+  i ← i + 1
+ENDE SOLANGE`}
+  expectedOutput={['1', '4', '9']}
+/>
+
+## SqlExercise
+
+<SqlExercise
+  title="Alle Mitarbeiter der Abteilung IT"
+  task="Gib Name und Gehalt aller Mitarbeiter aus, die in der Abteilung 'IT' arbeiten."
+  schema={`CREATE TABLE mitarbeiter (
+  id INTEGER PRIMARY KEY,
+  name TEXT NOT NULL,
+  abteilung TEXT NOT NULL,
+  gehalt INTEGER NOT NULL
+);
+INSERT INTO mitarbeiter VALUES
+  (1, 'Meier',  'IT',      4200),
+  (2, 'Schulz', 'Vertrieb',3800),
+  (3, 'Yildiz', 'IT',      4600);`}
+  starter="SELECT "
+  solution="SELECT name, gehalt FROM mitarbeiter WHERE abteilung = 'IT';"
+/>
+
+## CSharpExercise
+
+<CSharpExercise
+  title="Summe zweier Zahlen"
+  task="Lies zwei Zahlen von stdin (je eine Zeile) und gib ihre Summe aus."
+  starter={`using System;
+
+class Program
+{
+    static void Main()
+    {
+        // Dein Code hier
+    }
+}`}
+  tests={[
+    { label: 'kleine Zahlen', stdin: '3\n4\n', expectedStdout: '7\n' },
+    { label: 'negative Zahl', stdin: '-5\n5\n', expectedStdout: '0\n' },
+  ]}
+  solution={`using System;
+
+class Program
+{
+    static void Main()
+    {
+        int a = int.Parse(Console.ReadLine());
+        int b = int.Parse(Console.ReadLine());
+        Console.WriteLine(a + b);
+    }
+}`}
+/>

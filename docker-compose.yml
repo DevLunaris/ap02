@@ -1,0 +1,42 @@
+services:
+  web:
+    build: .
+    image: ap2-lernhub:local
+    container_name: ap2-web
+    restart: unless-stopped
+    ports:
+      # Port über WEB_PORT in .env änderbar, falls 3000 schon belegt ist.
+      - '${WEB_PORT:-3000}:3000'
+    environment:
+      # Interner Servicename - die URL verlässt den Server nie, der Browser
+      # spricht ausschließlich mit /api/run.
+      CODE_RUNNER_URL: http://piston:2000
+    depends_on:
+      - piston
+
+  piston:
+    image: ghcr.io/engineer-man/piston:latest
+    container_name: ap2-piston
+    restart: unless-stopped
+    # Piston isoliert Ausführungen mit isolate und braucht dafür erweiterte Rechte.
+    # Der Container ist nur im internen Compose-Netz erreichbar, nicht von außen.
+    privileged: true
+    tmpfs:
+      - /piston/jobs
+    volumes:
+      - piston-packages:/piston/packages
+    # Bewusst kein ports:-Mapping - Piston soll nicht am Host hängen.
+    expose:
+      - '2000'
+
+volumes:
+  piston-packages:
+# Einmalig nach dem ersten Start die .NET-Runtime nachinstallieren:
+#
+#   docker compose up -d
+#   docker exec ap2-piston /piston/piston ppman install dotnet
+#
+# Installierte Runtimes liegen im Volume piston-packages und überleben Neustarts.
+# Verfügbare Pakete auflisten:
+#
+#   docker exec ap2-piston /piston/piston ppman list

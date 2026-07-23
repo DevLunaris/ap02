@@ -1,0 +1,3 @@
+Beispiel Websiten die das gut machen: 
+- https://www.ap2-fiae.de/thema/pseudocode <--- am aktuellsten
+- https://ap2.online/sql/datenbanken beispiel zu letztem Jahr, bevorzuge die andere
