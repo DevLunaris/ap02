@@ -151,6 +151,28 @@ INSERT INTO mitarbeiter VALUES
   solution="SELECT name, gehalt FROM mitarbeiter WHERE abteilung = 'IT';"
 />
 
+Bei `INSERT`, `UPDATE` und `DELETE` wird nicht das Result-Set verglichen, sondern der
+Tabellenzustand nach der Ausführung – über `compareTables`:
+
+<SqlExercise
+  title="Gehälter der IT-Abteilung erhöhen"
+  task="Erhöhe das Gehalt aller Mitarbeiter der Abteilung 'IT' um 200."
+  schema={`CREATE TABLE mitarbeiter (
+  id INTEGER PRIMARY KEY,
+  name TEXT NOT NULL,
+  abteilung TEXT NOT NULL,
+  gehalt INTEGER NOT NULL
+);
+INSERT INTO mitarbeiter VALUES
+  (1, 'Meier',  'IT',      4200),
+  (2, 'Schulz', 'Vertrieb',3800),
+  (3, 'Yildiz', 'IT',      4600);`}
+  starter="UPDATE mitarbeiter"
+  hint="Denk an das WHERE - ohne it trifft das UPDATE jede Zeile."
+  compareTables={['mitarbeiter']}
+  solution="UPDATE mitarbeiter SET gehalt = gehalt + 200 WHERE abteilung = 'IT';"
+/>
+
 ## CSharpExercise
 
 <CSharpExercise
@@ -179,5 +201,46 @@ class Program
         int b = int.Parse(Console.ReadLine());
         Console.WriteLine(a + b);
     }
+}`}
+/>
+
+Mit `hiddenTestHarness` übt man eine einzelne Methode, ohne jedes Mal ein ganzes
+Programm zu schreiben. `{'{{CODE}}'}` markiert die Stelle, an der die Eingabe eingesetzt wird:
+
+<CSharpExercise
+  title="Nur die Methode: Maximum eines Arrays"
+  task="Vervollständige die Methode Max. Main und die Testausgabe sind schon da."
+  starter={`static int Max(int[] zahlen)
+{
+    // Dein Code hier
+    return 0;
+}`}
+  hiddenTestHarness={`using System;
+using System.Linq;
+
+class Program
+{
+    {{CODE}}
+
+    static void Main()
+    {
+        var eingabe = Console.ReadLine();
+        var zahlen = eingabe.Split(' ').Select(int.Parse).ToArray();
+        Console.WriteLine(Max(zahlen));
+    }
+}`}
+  tests={[
+    { label: 'gemischte Werte', stdin: '3 9 2 7\n', expectedStdout: '9\n' },
+    { label: 'nur negative Werte', stdin: '-5 -2 -9\n', expectedStdout: '-2\n' },
+    { label: 'ein Element', stdin: '42\n', expectedStdout: '42\n' },
+  ]}
+  solution={`static int Max(int[] zahlen)
+{
+    int groesstes = zahlen[0];
+    foreach (var zahl in zahlen)
+    {
+        if (zahl > groesstes) groesstes = zahl;
+    }
+    return groesstes;
 }`}
 />

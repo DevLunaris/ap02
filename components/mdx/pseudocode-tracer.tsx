@@ -11,6 +11,8 @@ import {
 } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 
+import { CodeEditor } from '@/components/editor/code-editor'
+import { PSEUDOCODE_LANGUAGE_ID } from '@/components/editor/pseudocode-language'
 import { CodeView } from '@/components/pseudocode/code-view'
 import { TraceTable } from '@/components/pseudocode/trace-table'
 import { compareOutput, run, type OutputComparison, type PseudoValue } from '@/lib/pseudocode'
@@ -142,11 +144,16 @@ export function PseudocodeTracer({
           </div>
 
           {editing ? (
-            <textarea
+            // Zum Bearbeiten Monaco mit der eigenen IHK-Dialekt-Grammatik.
+            // Beim Abspielen dagegen die schlanke Nur-Lese-Ansicht: Sie zeigt die
+            // aktive Zeile ohne Editor-Overhead und ohne Scroll-Konflikte.
+            <CodeEditor
               value={code}
-              onChange={(event) => setCode(event.target.value)}
-              spellCheck={false}
-              className="min-h-[16rem] flex-1 resize-y rounded-lg border border-accent bg-surface-sunken p-2 font-mono text-[0.8rem] leading-6 outline-none"
+              onChange={setCode}
+              language={PSEUDOCODE_LANGUAGE_ID}
+              height="100%"
+              ariaLabel="Pseudocode bearbeiten"
+              onRun={() => setEditing(false)}
             />
           ) : (
             <CodeView code={code} activeLine={currentStep?.line} errorLine={errorLine} />

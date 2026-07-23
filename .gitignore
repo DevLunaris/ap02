@@ -12,3 +12,7 @@ coverage/
 
 # Maschinenlokale Claude-Code-Einstellungen
 .claude/settings.local.json
+
+# Von scripts/prepare-assets.mjs erzeugt (läuft vor dev und build)
+public/monaco/
+public/sql-wasm.wasm

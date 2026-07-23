@@ -8,10 +8,10 @@ Fachinformatiker/-in Anwendungsentwicklung.
 SQL gegen eine echte Datenbank absetzen, C# kompilieren und gegen Testfälle prüfen.
 Alles auf der eigenen Maschine, ohne Account, ohne Tracking, ohne Cloud.
 
-> **Status: Phase 2 ist fertig.** Der Pseudocode-Interpreter läuft – Code Schritt für
-> Schritt durchspielen, mit automatisch mitwachsender Wertetabelle, Auto-Play und
-> Übungsmodus. Du kannst auch eigenen Pseudocode aus alten Prüfungen eintippen und
-> tracen. SQL- und C#-Engine folgen – siehe [Fahrplan](#fahrplan).
+> **Status: Alle drei Engines laufen.** Pseudocode Schritt für Schritt tracen, SQL gegen
+> echtes SQLite im Browser absetzen, C# kompilieren und gegen Testfälle prüfen – jeweils
+> mit automatischer Auswertung. Als Nächstes kommen ausgearbeitete Themen; bisher gibt es
+> ein Beispielthema. Siehe [Fahrplan](#fahrplan).
 
 ---
 
@@ -25,8 +25,8 @@ Hier ist jede Übung interaktiv:
 | Engine | Was sie macht |
 | --- | --- |
 | `<PseudocodeTracer />` ✅ | Eigener Interpreter für den deutschen IHK-Pseudocode. Läuft schrittweise, baut die Wertetabelle automatisch mit, Schritt vor/zurück, Auto-Play. Eigenen Code eintippen möglich. |
-| `<SqlExercise />` | SQLite im Browser (sql.js). Eigenes Seed-Schema pro Aufgabe, automatischer Abgleich mit der Musterlösung. |
-| `<CSharpExercise />` | Echte Kompilierung über eine selbst gehostete [Piston](https://github.com/engineer-man/piston)-Instanz, Prüfung gegen Testfälle. |
+| `<SqlExercise />` ✅ | SQLite im Browser (sql.js). Eigenes Seed-Schema pro Aufgabe, automatischer Abgleich mit der Musterlösung – Spaltenreihenfolge egal, Zeilenreihenfolge nur bei `ORDER BY`. Bei `INSERT`/`UPDATE`/`DELETE` wird der Tabellenzustand verglichen. |
+| `<CSharpExercise />` ✅ | Echte Kompilierung über eine selbst gehostete [Piston](https://github.com/engineer-man/piston)-Instanz, Prüfung gegen Testfälle. Mit `hiddenTestHarness` übt man einzelne Methoden statt ganzer Programme. |
 
 Dazu Multiple Choice mit Begründung **auch für die falschen Optionen**, Freitext mit
 Selbstkontrolle, und Mermaid-Übungen für UML und BPMN.
@@ -205,7 +205,8 @@ implementieren, fertig – keine UI-Komponente muss angefasst werden.
       CodeRunner-Interface, Docker
 - [x] **Phase 2 – Pseudocode-Engine:** Tokenizer, Parser und Step-Interpreter mit
       55 Tests, Tracer-UI mit Wertetabelle, Auto-Play und Übungsmodus
-- [ ] **Phase 3 – SQL- und C#-Engine:** sql.js und Monaco, Piston-Anbindung
+- [x] **Phase 3 – SQL- und C#-Engine:** sql.js und Monaco (beide selbst gehostet),
+      Piston-Anbindung über `/api/run`
 - [ ] **Phase 4 – Musterthemen:** `pseudocode`, `sql-select`, `aktivitaetsdiagramm` als
       Qualitätsmaßstab
 - [ ] **Phase 5 – Lern-Features:** Fortschritt im localStorage mit JSON-Export,

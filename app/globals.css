@@ -77,6 +77,15 @@
 }
 
 @layer components {
+  /* Zeilenhervorhebung im Monaco-Editor - gesetzt von components/editor/code-editor.tsx. */
+  .ap2-active-line {
+    background-color: var(--accent-soft);
+  }
+
+  .ap2-active-line-margin {
+    border-left: 3px solid var(--accent);
+  }
+
   /*
    * Typografie für gerenderten MDX-Inhalt. Bewusst handgeschrieben statt
    * @tailwindcss/typography: Der Fließtext steht zwischen interaktiven Übungen,

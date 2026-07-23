@@ -22,7 +22,7 @@ beschreibt, **wie** der Code aufgebaut ist und wie man ihn erweitert.
 npm run dev        # Entwicklungsserver auf :3000
 npm run build      # Produktionsbuild (prüft Typen + Lint + rendert alle Seiten)
 npm run typecheck  # nur tsc
-npm run test       # Vitest (ab Phase 2 relevant)
+npm run test       # Vitest (143 Tests)
 ```
 
 Unter Windows startet `start.bat` den Dev-Server komfortabler: Es installiert bei Bedarf
@@ -54,11 +54,18 @@ content/
   topics.index.json       Themen-Index (maßgeblich)
   topics/<slug>.mdx       Themeninhalte
   showcase.mdx            Demo aller MDX-Komponenten
+  editor/                 Monaco-Wrapper + Pseudocode-Grammatik
+  pseudocode/             Code-Ansicht und Wertetabelle des Tracers
+  sql/                    Ergebnis-Tabelle
+config/exam.ts            Prüfungsdatum und Prüfungsbereiche
 lib/
   content/schema.ts       Zod-Schemata + Typen (frei von Node-APIs)
   content/topics.ts       Content-Loader (server-only)
   content/mdx.tsx         MDX-Rendering
-  runner/                 CodeRunner-Interface + Piston-Implementierung
+  pseudocode/             Tokenizer, Parser, Step-Interpreter
+  sql/                    sql.js-Runner + Vergleichslogik
+  runner/                 CodeRunner-Interface, Piston, Client für /api/run
+scripts/prepare-assets.mjs  kopiert sql.js und Monaco nach public/
 ```
 
 ## Datenfluss: Index und Frontmatter
@@ -162,19 +169,24 @@ Diagramme haben mehrere richtige Darstellungen.
 Siehe [Die Pseudocode-Engine](#die-pseudocode-engine).
 
 ### `<SqlExercise schema solution task starter? hint? compareTables? title?>`
-> Engine folgt in **Phase 3** (sql.js, clientseitig).
 
 - `schema` - `CREATE TABLE` + `INSERT` für die In-Memory-DB dieser Übung
 - `solution` - Musterlösung, Grundlage der automatischen Prüfung
 - `compareTables?: string[]` - bei INSERT/UPDATE/DELETE wird der Zustand dieser Tabellen
-  verglichen statt eines Result-Sets
+  verglichen statt eines Result-Sets. Ohne Angabe werden alle Tabellen verglichen.
+
+Siehe [Die SQL-Engine](#die-sql-engine).
 
 ### `<CSharpExercise starter task tests? hiddenTestHarness? solution? title?>`
-> Engine folgt in **Phase 3** (Piston über `/api/run`).
 
-- `tests: Array<{ stdin, expectedStdout, label? }>`
+- `tests: Array<{ stdin, expectedStdout, label? }>` - Testfälle laufen nacheinander
 - `hiddenTestHarness?` - Rahmenprogramm; `{{CODE}}` wird durch die Eingabe ersetzt.
   Damit lassen sich einzelne Methoden üben, ohne ein ganzes Programm zu schreiben.
+  Fehlt der Platzhalter, wird der Code angehängt statt still das Falsche auszuführen.
+
+Der Ausgabevergleich toleriert Windows-Zeilenenden, Leerraum am Zeilenende und
+führende bzw. abschließende Leerzeilen. **Einrückung am Zeilenanfang zählt** - sie
+kann Teil der Aufgabe sein.
 
 ## Fallstrick: MDX und `{…}`-Ausdrücke
 
@@ -245,6 +257,56 @@ wurde nie geschlossen - es fehlt `ENDE WENN`." Wer eine Bedingung mit einer Zahl
 eines Wahrheitswerts füttert, bekommt zusätzlich den Hinweis auf die Verwechslung von
 `=` und `←`. Beim Erweitern des Parsers bitte in diesem Stil bleiben.
 
+## Die SQL-Engine
+
+[lib/sql/](lib/sql/) - läuft vollständig im Browser über sql.js (SQLite als
+WebAssembly). Kein Datenbankserver, keine Netzwerkanfrage außer dem einmaligen Laden
+der WASM-Datei von der eigenen Domain.
+
+Jede Übung bekommt eine eigene In-Memory-Datenbank. Die Musterlösung läuft in einer
+**zweiten, frischen** Datenbank - sonst würde eine Musterlösung mit `INSERT` die Daten
+der lernenden Person verändern.
+
+### Prüfregeln
+
+Die Vergleichslogik in [lib/sql/compare.ts](lib/sql/compare.ts) ist frei von sql.js und
+React, damit sie ohne WebAssembly testbar ist.
+
+| Fall | Wie geprüft wird |
+| --- | --- |
+| Musterlösung ist `SELECT` | Result-Sets vergleichen |
+| Musterlösung ändert Daten | Tabellenzustand nach der Ausführung vergleichen |
+| Spaltenreihenfolge und -namen | egal - jede Zeile wird kanonisiert |
+| Zeilenreihenfolge | zählt nur, wenn die Musterlösung `ORDER BY` enthält |
+| `5` und `"5"` | gelten als gleich; `NULL` ist von `""` verschieden |
+
+Beim Erkennen von `ORDER BY` und der Anweisungsart werden Kommentare und Zeichenketten
+vorher entfernt - `WHERE name = 'ORDER BY'` darf nicht als Sortierung durchgehen.
+
+SQLite-Meldungen werden übersetzt (`explainSqliteError`): „no such column: k.name" wird
+zu „Die Spalte "k.name" gibt es nicht. Tippfehler, oder fehlt ein JOIN?". Die
+Originalmeldung bleibt zusätzlich sichtbar.
+
+## Monaco
+
+[components/editor/code-editor.tsx](components/editor/code-editor.tsx) kapselt den
+Editor für alle Code-Eingaben. Strg+Enter löst `onRun` aus.
+
+**Selbst gehostet, nicht vom CDN.** `@monaco-editor/react` lädt Monaco per Default von
+jsdelivr - das widerspricht der Vorgabe „keine externe API". Deshalb zeigt der Loader auf
+`public/monaco`, das [scripts/prepare-assets.mjs](scripts/prepare-assets.mjs) vor jedem
+`dev` und `build` aus `node_modules` befüllt. Dabei fliegen die vollständigen
+Sprachdienste für TypeScript, CSS, HTML und JSON raus (23,3 → 6,9 MB) - wir brauchen nur
+die Monarch-Grammatiken für SQL und C#.
+
+Für den IHK-Pseudocode gibt es keine fertige Grammatik; sie steht in
+[components/editor/pseudocode-language.ts](components/editor/pseudocode-language.ts) und
+nutzt bewusst dieselben Schlüsselwörter wie der Tokenizer - was der Interpreter versteht,
+soll auch farbig sein.
+
+`public/monaco/` und `public/sql-wasm.wasm` sind erzeugte Artefakte und stehen in
+.gitignore.
+
 ## Code-Ausführung
 
 ```
@@ -275,10 +337,13 @@ docker exec ap2-piston /piston/piston ppman install dotnet   # einmalig
   Theme-System, CodeRunner-Interface, Docker.
 - **Phase 2 - Pseudocode-Engine: fertig.** Tokenizer, Parser und Step-Interpreter in
   `lib/pseudocode/` mit 55 Tests, dazu die Tracer-UI mit Wertetabelle, Auto-Play und
-  Übungsmodus. Code ist im Tracer editierbar (derzeit Textfeld).
-- **Phase 3 - SQL- und C#-Engine:** sql.js + Monaco, Piston-Anbindung.
-  Dabei den Tracer von der Textarea auf Monaco umstellen - inklusive einer eigenen
-  Syntax-Definition für den IHK-Dialekt.
+  Übungsmodus.
+- **Phase 3 - SQL- und C#-Engine: fertig.** sql.js clientseitig mit automatischer
+  Prüfung, C# über Piston hinter `/api/run`, Monaco selbst gehostet für alle
+  Code-Eingaben inklusive eigener Grammatik für den IHK-Dialekt.
+  *Offen:* Der `piston`-Service ist geschrieben, aber nie gegen eine laufende Instanz
+  getestet worden - auf dem Entwicklungsrechner gibt es kein Docker. Vor Phase 4
+  einmal `docker compose up` und eine C#-Übung ausführen.
 - **Phase 4 - drei Musterthemen:** `pseudocode`, `sql-select`, `aktivitaetsdiagramm`.
 - **Phase 5 - Lern-Features:** `useProgress()` auf localStorage mit JSON-Export/Import,
   Statusknöpfe, Übungspool, FlexSearch, Tastaturkürzel.
