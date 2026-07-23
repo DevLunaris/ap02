@@ -22,7 +22,7 @@ beschreibt, **wie** der Code aufgebaut ist und wie man ihn erweitert.
 npm run dev        # Entwicklungsserver auf :3000
 npm run build      # Produktionsbuild (prüft Typen + Lint + rendert alle Seiten)
 npm run typecheck  # nur tsc
-npm run test       # Vitest (156 Tests, inkl. aller Übungen aus den Inhalten)
+npm run test       # Vitest (221 Tests, inkl. aller Übungen aus den Inhalten)
 ```
 
 Unter Windows startet `start.bat` den Dev-Server komfortabler: Es installiert bei Bedarf
@@ -57,13 +57,18 @@ content/
   editor/                 Monaco-Wrapper + Pseudocode-Grammatik
   pseudocode/             Code-Ansicht und Wertetabelle des Tracers
   sql/                    Ergebnis-Tabelle
+  progress/               Statusknöpfe, Notizen, Fortschrittspanel
+  search/                 Suchdialog und Auslöser im Header
 config/exam.ts            Prüfungsdatum und Prüfungsbereiche
 lib/
   content/schema.ts       Zod-Schemata + Typen (frei von Node-APIs)
   content/topics.ts       Content-Loader (server-only)
   content/mdx.tsx         MDX-Rendering
+  content/exercises.ts    Übungs-Extraktion aus MDX (Pool + Wächter-Test)
   pseudocode/             Tokenizer, Parser, Step-Interpreter
   sql/                    sql.js-Runner + Vergleichslogik
+  progress/               localStorage-Store hinter useProgress()
+  search/                 Suchlogik (client) + Index-Bau (server)
   runner/                 CodeRunner-Interface, Piston, Client für /api/run
 scripts/prepare-assets.mjs  kopiert sql.js und Monaco nach public/
 ```
@@ -348,6 +353,71 @@ soll auch farbig sein.
 `public/monaco/` und `public/sql-wasm.wasm` sind erzeugte Artefakte und stehen in
 .gitignore.
 
+## Lern-Features
+
+### Fortschritt
+
+[lib/progress/](lib/progress/) - ein externer Store auf `localStorage`, angesprochen
+über `useProgress()`. **Nie direkt an localStorage gehen**, damit Speicherformat und
+Schema an einer Stelle bleiben.
+
+Warum kein React-Context: Header, Themenseite, Fokus-Liste und Startseite lesen denselben
+Zustand. Mit `useSyncExternalStore` rendern nur die Komponenten neu, die ihn wirklich
+abonniert haben.
+
+**Hydration ist der kritische Punkt.** `getSnapshot` liefert vor dem ersten `subscribe`
+denselben leeren Zustand wie der Server. Erst wenn React im Effekt abonniert, wird
+localStorage gelesen. Würde man direkt beim Rendern lesen, gäbe es auf jeder Seite einen
+Hydration-Mismatch.
+
+Statusmodell: `offen` → `gelesen` → `sitzt`. In der Prozentrechnung zählt `gelesen` nur
+**halb** - einmal durchlesen ist nicht dasselbe wie können.
+
+Beim Erweitern des gespeicherten Formats `PROGRESS_VERSION` erhöhen **und** `migrate()`
+einen Übergang geben - sonst verliert jemand beim Update seinen Fortschritt.
+
+### Übungspool
+
+`/uebung` sammelt alle Aufgaben aller Themen. Die Extraktion in
+[lib/content/exercises.ts](lib/content/exercises.ts) schneidet den **MDX-Quelltext** jeder
+Übung heraus (über die Positionsangaben im Syntaxbaum) und rendert ihn erneut durch
+dieselbe Pipeline. Dadurch verhält sich eine Aufgabe im Pool exakt wie auf der Themenseite,
+ohne dass Props von Hand nachgebaut werden müssten.
+
+Dasselbe Modul nutzt der Wächter-Test - der Test prüft also wirklich das, was im Pool
+landet.
+
+### Suche
+
+Zwei Teile, bewusst getrennt:
+
+- [lib/search/search.ts](lib/search/search.ts) - reine Suchlogik, läuft im Client
+- [lib/search/index-builder.ts](lib/search/index-builder.ts) - `server-only`, baut den
+  Index aus den Themen und zieht den Fließtext über den MDX-Syntaxbaum
+
+**Kein FlexSearch:** Bei 89 Dokumenten bringt eine Suchbibliothek keinen spürbaren
+Vorteil, kostet aber Bundle-Größe und nimmt die Kontrolle über die deutsche
+Normalisierung aus der Hand. Die ~70 Zeilen sind dafür vollständig getestet.
+
+Die Normalisierung führt **drei** Schreibweisen auf eine Form zusammen:
+`Aktivitätsdiagramm`, `aktivitaetsdiagramm` und `aktivitatsdiagramm`. Wer schnell tippt,
+lässt Umlaute weg - und zwar meist als `a`, nicht als `ae`.
+
+Der Index kommt über `/api/suche` und wird erst beim ersten Öffnen der Suche geladen
+(aktuell ~35 KB). Auf Seiten, auf denen nie gesucht wird, kostet er nichts.
+
+### Tastaturkürzel
+
+| Taste | Wirkung |
+| --- | --- |
+| `/` | Suche öffnen |
+| `←` `→` | vorheriges / nächstes Thema derselben Kategorie |
+| `↑` `↓` `Enter` `Esc` | innerhalb der Suche |
+
+`isTypingTarget()` in [components/search/search-trigger.tsx](components/search/search-trigger.tsx)
+verhindert, dass Kürzel während einer Eingabe greifen - inklusive Monaco, das ein
+verstecktes Textfeld rendert. Ohne das würde ein `/` in einer SQL-Abfrage die Suche öffnen.
+
 ## Code-Ausführung
 
 ```
@@ -388,5 +458,9 @@ docker exec ap2-piston /piston/piston ppman install dotnet   # einmalig
 - **Phase 4 - drei Musterthemen: fertig.** `pseudocode`, `sql-select` und
   `aktivitaetsdiagramm` sind ausgearbeitet und setzen den Qualitätsmaßstab - siehe
   [Maßstab für neue Themen](#massstab-fuer-neue-themen).
-- **Phase 5 - Lern-Features:** `useProgress()` auf localStorage mit JSON-Export/Import,
-  Statusknöpfe, Übungspool, FlexSearch, Tastaturkürzel.
+- **Phase 5 - Lern-Features: fertig.** `useProgress()` auf localStorage mit
+  Export/Import, Statusknöpfe und Notizen je Thema, Fokus-Liste mit Status,
+  Übungspool und Volltextsuche mit Tastaturkürzeln.
+
+Damit steht das Gerüst. Was bleibt: die **86 noch nicht ausgearbeiteten Themen** -
+Maßstab siehe oben - und ein Testlauf gegen eine echte Piston-Instanz.

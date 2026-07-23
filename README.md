@@ -8,13 +8,9 @@ Fachinformatiker/-in Anwendungsentwicklung.
 SQL gegen eine echte Datenbank absetzen, C# kompilieren und gegen Testfälle prüfen.
 Alles auf der eigenen Maschine, ohne Account, ohne Tracking, ohne Cloud.
 
-> **Status: Engines laufen, drei Themen sind ausgearbeitet.** Pseudocode Schritt für
-> Schritt tracen, SQL gegen echtes SQLite im Browser absetzen, C# kompilieren und gegen
-> Testfälle prüfen – jeweils mit automatischer Auswertung. Ausgearbeitet sind
-> [Pseudocode](content/topics/pseudocode.mdx),
-> [SELECT-Abfragen](content/topics/sql-select.mdx) und
-> [Aktivitätsdiagramm](content/topics/aktivitaetsdiagramm.mdx); die übrigen 86 Themen sind
-> im Index angelegt und warten auf Inhalt. Siehe [Fahrplan](#fahrplan).
+> **Status: funktionsfähig.** Alle drei Engines laufen, die Lern-Features stehen,
+> drei Themen sind ausgearbeitet. Was fehlt, ist Inhalt: 86 der 89 Themen sind im Index
+> angelegt und warten darauf, geschrieben zu werden – [Beiträge willkommen](#eigene-themen-schreiben).
 
 ---
 
@@ -33,6 +29,16 @@ Hier ist jede Übung interaktiv:
 
 Dazu Multiple Choice mit Begründung **auch für die falschen Optionen**, Freitext mit
 Selbstkontrolle, und Mermaid-Übungen für UML und BPMN.
+
+Drumherum das, was man zum Durchhalten braucht:
+
+- **Lernstand je Thema** – offen / gelesen / sitzt, plus eigene Notizen. Alles im Browser,
+  als JSON-Datei sicherbar und wiederherstellbar.
+- **Fokus-Liste** mit den Themen, die am meisten Punkte bringen, in Arbeitsreihenfolge.
+- **Übungspool** – alle Aufgaben aller Themen gemischt, filterbar nach Prüfungsbereich und
+  Typ. Für den Endspurt, wenn es nicht mehr ums Lesen geht.
+- **Volltextsuche** über alle Themen, mit `/` erreichbar. Umlaute darfst du weglassen.
+- **Countdown** auf deinen Prüfungstermin, Dark Mode, Tastaturkürzel.
 
 Alle Inhalte sind **MDX-Dateien im Repo** – keine Datenbank, kein CMS. Du kannst Themen
 per Pull Request beisteuern oder in deinem Fork einfach eigene schreiben.
@@ -136,7 +142,10 @@ zuverlässig, wenn du das Fenster schließt. `stop.bat` ist der Notausgang.
 | `npm run dev` | Entwicklungsserver |
 | `npm run build` | Produktionsbuild inkl. Typ- und Lint-Prüfung |
 | `npm run typecheck` | nur TypeScript |
-| `npm test` | Vitest |
+| `npm test` | Vitest (221 Tests) |
+
+Tastaturkürzel: `/` öffnet die Suche, `←` und `→` wechseln zum vorherigen bzw. nächsten
+Thema derselben Kategorie.
 
 ---
 
@@ -217,8 +226,9 @@ implementieren, fertig – keine UI-Komponente muss angefasst werden.
       Piston-Anbindung über `/api/run`
 - [x] **Phase 4 – Musterthemen:** `pseudocode`, `sql-select` und `aktivitaetsdiagramm`
       als Qualitätsmaßstab für alle weiteren Themen
-- [ ] **Phase 5 – Lern-Features:** Fortschritt im localStorage mit JSON-Export,
-      Fokus-Modus, Übungspool, Volltextsuche, Tastaturkürzel
+- [x] **Phase 5 – Lern-Features:** Fortschritt im localStorage mit Export/Import,
+      Statusknöpfe und Notizen, Fokus-Modus, Übungspool, Volltextsuche, Tastaturkürzel
+- [ ] **Laufend – Themen füllen:** 86 von 89 Themen warten noch auf Inhalt
 
 ---
 

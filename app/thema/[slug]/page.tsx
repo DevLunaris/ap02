@@ -4,6 +4,9 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 
 import { Breadcrumbs } from '@/components/breadcrumbs'
+import { StatusButtons } from '@/components/progress/status-buttons'
+import { TopicNotes } from '@/components/progress/topic-notes'
+import { TopicArrowKeys } from '@/components/topic-arrow-keys'
 import { New2025Badge, PriorityBadge, TopicStats } from '@/components/topic-meta'
 import { getExamArea } from '@/config/exam'
 import { TopicContent } from '@/lib/content/mdx'
@@ -86,6 +89,10 @@ export default async function TopicPage({ params }: { params: Promise<{ slug: st
         </section>
       )}
 
+      <div className="mt-4">
+        <StatusButtons slug={topic.slug} />
+      </div>
+
       {topic.hasContent && topic.body ? (
         <div className="mt-8">
           <TopicContent source={topic.body} />
@@ -93,6 +100,10 @@ export default async function TopicPage({ params }: { params: Promise<{ slug: st
       ) : (
         <DraftNotice slug={topic.slug} />
       )}
+
+      <div className="mt-10">
+        <TopicNotes slug={topic.slug} />
+      </div>
 
       {related.length > 0 && (
         <section className="mt-12 border-t border-line pt-6">
@@ -110,6 +121,8 @@ export default async function TopicPage({ params }: { params: Promise<{ slug: st
           </div>
         </section>
       )}
+
+      <TopicArrowKeys prevSlug={prev?.slug} nextSlug={next?.slug} />
 
       {(prev || next) && (
         <nav className="mt-8 grid gap-3 border-t border-line pt-6 sm:grid-cols-2">

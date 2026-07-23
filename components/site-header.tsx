@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
+import { SearchTrigger } from '@/components/search/search-trigger'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { cn } from '@/lib/utils'
 
@@ -45,6 +46,7 @@ export function SiteHeader() {
           ))}
         </nav>
 
+        <SearchTrigger />
         <ThemeToggle />
       </div>
     </header>

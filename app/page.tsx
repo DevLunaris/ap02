@@ -2,6 +2,7 @@ import { ArrowRight } from 'lucide-react'
 import Link from 'next/link'
 
 import { ExamCountdown } from '@/components/exam-countdown'
+import { ProgressPanel } from '@/components/progress/progress-panel'
 import { TopicCard } from '@/components/topic-meta'
 import { EXAM_AREAS } from '@/config/exam'
 import { getAllTopics, getCategoriesWithCounts, getFocusTopics } from '@/lib/content/topics'
@@ -47,6 +48,11 @@ export default function HomePage() {
         <ExamCountdown />
       </section>
 
+      <ProgressPanel
+        slugs={topics.map((topic) => topic.slug)}
+        topicTitles={Object.fromEntries(topics.map((topic) => [topic.slug, topic.title]))}
+      />
+
       <section>
         <div className="mb-3 flex items-baseline justify-between gap-3">
           <h2 className="text-xl font-bold tracking-tight">Inhaltsstand</h2>
@@ -55,7 +61,7 @@ export default function HomePage() {
           </span>
         </div>
         <div
-          className="h-2.5 overflow-hidden rounded-full bg-surface-sunken"
+          className="h-2 overflow-hidden rounded-full bg-surface-sunken"
           role="progressbar"
           aria-valuenow={coverage}
           aria-valuemin={0}
@@ -64,9 +70,6 @@ export default function HomePage() {
         >
           <div className="h-full rounded-full bg-accent transition-all" style={{ width: `${coverage}%` }} />
         </div>
-        <p className="mt-2 text-xs text-ink-muted">
-          Der persönliche Lernfortschritt (gelesen / sitzt) kommt in Phase 5 dazu.
-        </p>
       </section>
 
       {focus.length > 0 && (
