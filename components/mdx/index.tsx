@@ -8,7 +8,7 @@ import { DiagramExercise } from './diagram-exercise'
 import { FreeText } from './free-text'
 import { MultipleChoice } from './multiple-choice'
 import { PseudocodeTracer } from './pseudocode-tracer'
-import { SqlExercise } from './sql-exercise'
+import { SqlExerciseMdx } from './sql-exercise-server'
 import { TermCard, TermGrid } from './term-card'
 
 /**
@@ -26,7 +26,8 @@ export const mdxComponents: MDXComponents = {
   FreeText,
   MultipleChoice,
   PseudocodeTracer,
-  SqlExercise,
+  // Die Server-Hülle löst schemaId auf und reicht an die Client-Komponente weiter.
+  SqlExercise: SqlExerciseMdx,
   TermCard,
   TermGrid,
 }
@@ -40,7 +41,7 @@ export {
   FreeText,
   MultipleChoice,
   PseudocodeTracer,
-  SqlExercise,
+  SqlExerciseMdx,
   TermCard,
   TermGrid,
 }

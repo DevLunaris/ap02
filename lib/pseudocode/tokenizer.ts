@@ -15,6 +15,8 @@ const KEYWORDS: Record<string, string> = {
   // Verzweigung
   wenn: 'WENN',
   if: 'WENN',
+  // "falls" nutzen die Musterloesungen im u-form-Pruefungstrainer.
+  falls: 'WENN',
   dann: 'DANN',
   then: 'DANN',
   sonst: 'SONST',
@@ -36,6 +38,9 @@ const KEYWORDS: Record<string, string> = {
   // Zählschleife
   fuer: 'FUER',
   for: 'FUER',
+  // "ZAEHLE i VON 0 BIS 7" - Schreibweise des deutschen "Pseudo-Pascal",
+  // das oer-informatik.de als Variante der IHK-Musterloesungen beschreibt.
+  zaehle: 'FUER',
   von: 'VON',
   from: 'VON',
   schritt: 'SCHRITT',
@@ -45,6 +50,8 @@ const KEYWORDS: Record<string, string> = {
   function: 'FUNKTION',
   gib: 'GIB',
   zurueck: 'ZURUECK',
+  // "RUECKGABE x" bzw. "Rueckgabe: x" statt "GIB x ZURUECK".
+  rueckgabe: 'RETURN',
   aus: 'AUS',
   return: 'RETURN',
   // Ausgabe in Kurzform - kommt in Aufgaben gelegentlich vor

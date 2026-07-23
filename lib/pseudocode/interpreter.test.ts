@@ -484,3 +484,63 @@ ENDE FÜR`
     expect(outputOf(source)).toEqual(['0', '1', '1', '2', '3', '5'])
   })
 })
+
+describe('Belegte IHK-Schreibvarianten', () => {
+  // Quellen: u-form-Prüfungstrainer FIAE (Musterlösungen) und oer-informatik.de
+  // (CC BY 4.0) zum deutschen "Pseudo-Pascal". Es gibt keine verbindliche
+  // Notation - der Parser muss die real vorkommenden Varianten lesen können.
+
+  it('akzeptiert "falls" statt "WENN"', () => {
+    const source = `x ← 5
+falls x > 3 dann
+  GIB "gross" AUS
+ende falls`
+    expect(outputOf(source)).toEqual(['gross'])
+  })
+
+  it('akzeptiert "falls … sonst"', () => {
+    const source = `x ← 1
+falls x > 3 dann
+  GIB "gross" AUS
+sonst
+  GIB "klein" AUS
+ende falls`
+    expect(outputOf(source)).toEqual(['klein'])
+  })
+
+  it('akzeptiert "ZÄHLE i VON a BIS b" als Zählschleife', () => {
+    const source = `ZÄHLE i VON 1 BIS 3
+  GIB i AUS
+ENDE ZÄHLE`
+    expect(outputOf(source)).toEqual(['1', '2', '3'])
+  })
+
+  it('akzeptiert "RÜCKGABE" statt "GIB … ZURÜCK"', () => {
+    const source = `FUNKTION quadrat(x)
+  RÜCKGABE x * x
+ENDE FUNKTION
+GIB quadrat(6) AUS`
+    expect(outputOf(source)).toEqual(['36'])
+  })
+
+  it('akzeptiert "Rueckgabe:" mit Doppelpunkt', () => {
+    const source = `FUNKTION doppelt(x)
+  Rueckgabe: x * 2
+ENDE FUNKTION
+GIB doppelt(21) AUS`
+    expect(outputOf(source)).toEqual(['42'])
+  })
+
+  it('liest eine Musterlösung im u-form-Stil', () => {
+    // Deutschsprachig, "=" als Zuweisung und Vergleich, "falls"/"sonst".
+    const source = `suchwort = "b"
+gefunden = FALSCH
+ZÄHLE i VON 0 BIS 2
+  falls suchwort = "b" dann
+    gefunden = WAHR
+  ende falls
+ENDE ZÄHLE
+GIB gefunden AUS`
+    expect(outputOf(source)).toEqual(['WAHR'])
+  })
+})

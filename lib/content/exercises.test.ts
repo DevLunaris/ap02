@@ -10,6 +10,7 @@ import {
   getAllExercises,
   readMdxFile,
 } from './exercises'
+import { getSchema } from './schemas'
 
 /**
  * Prüft die Übungen in den Inhaltsdateien selbst.
@@ -103,10 +104,12 @@ describe('SQL-Übungen aus den Inhalten', () => {
   it.each(sqlExercises.map((exercise) => [exercise.label, exercise] as const))(
     '%s',
     (_label, exercise) => {
-      const schema = attributeValue(exercise.source, 'schema')
+      // Übungen dürfen ein eigenes Schema mitbringen oder ein geteiltes referenzieren.
+      const schemaId = attributeValue(exercise.source, 'schemaId')
+      const schema = schemaId ? getSchema(schemaId) : attributeValue(exercise.source, 'schema')
       const solution = attributeValue(exercise.source, 'solution')
 
-      expect(schema, 'schema fehlt').toBeTruthy()
+      expect(schema, 'weder schema noch schemaId gesetzt').toBeTruthy()
       expect(solution, 'solution fehlt').toBeTruthy()
       if (!schema || !solution) return
 

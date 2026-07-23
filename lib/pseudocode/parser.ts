@@ -383,6 +383,10 @@ class Parser {
 
   private parseReturn(): Statement {
     const opener = this.next() // RETURN
+    // Musterlösungen schreiben teils "Rueckgabe: ergebnis" - der Doppelpunkt
+    // ist reine Schreibweise und wird geschluckt.
+    this.acceptOperator(':')
+
     if (this.peek().type === 'newline' || this.peek().type === 'eof') {
       return { kind: 'return', line: opener.line }
     }

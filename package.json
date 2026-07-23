@@ -10,7 +10,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "prepare-assets": "node scripts/prepare-assets.mjs"
+    "prepare-assets": "node scripts/prepare-assets.mjs",
+    "neues-thema": "node scripts/neues-thema.mjs"
   },
   "dependencies": {
     "@monaco-editor/react": "^4.7.0",

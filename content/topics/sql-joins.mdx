@@ -1,0 +1,275 @@
+---
+slug: sql-joins
+title: JOINs & Unterabfragen
+summary: >-
+  Tabellen verknüpfen und Abfragen verschachteln. Ohne JOIN bleibt jede
+  Datenbank eine Sammlung unverbundener Listen.
+learningGoals:
+  - INNER, LEFT und RIGHT JOIN sicher unterscheiden und anwenden
+  - Aus einem Fremdschlüssel die richtige ON-Bedingung ableiten
+  - Mehr als zwei Tabellen in einer Abfrage verknüpfen
+  - Erkennen, wann eine Unterabfrage die bessere Wahl ist als ein JOIN
+related:
+  - sql-select
+  - sql-grundlagen
+  - relationales-datenmodell
+  - erm
+---
+
+Ein relationales Datenmodell verteilt Informationen absichtlich auf mehrere Tabellen –
+genau das ist der Sinn der Normalisierung. Beim Abfragen musst du sie wieder
+zusammenführen. Das ist die Aufgabe des JOIN.
+
+<Callout type="merksatz" title="Der eine Gedanke">
+  Ein JOIN baut gedanklich erst **alle Kombinationen** aus beiden Tabellen und wirft dann
+  weg, was die `ON`-Bedingung nicht erfüllt. Wer das im Kopf hat, versteht sofort, warum
+  ein vergessenes `ON` ein riesiges Ergebnis liefert – und warum ein `LEFT JOIN` Zeilen
+  mit `NULL` auffüllt, statt sie zu streichen.
+</Callout>
+
+## Kernbegriffe
+
+<TermGrid>
+  <TermCard term="Fremdschlüssel">
+    Spalte, die auf den Primärschlüssel einer anderen Tabelle zeigt. Sie ist die
+    Verbindungsstelle und gehört fast immer in die `ON`-Bedingung.
+  </TermCard>
+  <TermCard term="INNER JOIN">
+    Liefert nur Zeilen, für die es in **beiden** Tabellen einen Partner gibt. Kurzform:
+    einfach `JOIN`.
+  </TermCard>
+  <TermCard term="LEFT JOIN">
+    Liefert **alle** Zeilen der linken Tabelle. Fehlt der Partner rechts, stehen dort
+    `NULL`-Werte.
+  </TermCard>
+  <TermCard term="Kartesisches Produkt">
+    Jede Zeile mit jeder kombiniert. Entsteht, wenn die Verknüpfungsbedingung fehlt –
+    bei 100 × 100 Zeilen sind das 10.000.
+  </TermCard>
+  <TermCard term="Unterabfrage">
+    Ein `SELECT` innerhalb eines anderen. Steht in `WHERE`, `FROM` oder `SELECT`.
+  </TermCard>
+  <TermCard term="Tabellen-Alias">
+    Kurzname für eine Tabelle (`FROM kunde k`). Bei mehreren Tabellen Pflicht, sobald
+    Spaltennamen doppelt vorkommen.
+  </TermCard>
+</TermGrid>
+
+## Die drei JOIN-Arten
+
+```sql
+SELECT k.name, b.datum
+FROM   kunde k
+JOIN   bestellung b ON b.kunde_id = k.id;
+```
+
+| Art | Was drin ist | Wofür in der Prüfung |
+| --- | --- | --- |
+| `INNER JOIN` | nur Zeilen mit Partner auf beiden Seiten | Standardfall: „Kunden **mit** ihren Bestellungen" |
+| `LEFT JOIN` | alle links, rechts ggf. `NULL` | „**Alle** Kunden, auch die ohne Bestellung" |
+| `RIGHT JOIN` | alle rechts, links ggf. `NULL` | selten – lässt sich immer als `LEFT JOIN` mit vertauschten Tabellen schreiben |
+
+<Callout type="tipp" title="Das Signalwort in der Aufgabe">
+  Steht dort **„alle"** oder **„auch die ohne …"**, brauchst du einen `LEFT JOIN`.
+  Steht dort nur **„mit"**, reicht der `INNER JOIN`. Ein einziges Wort in der
+  Aufgabenstellung entscheidet – lies es zweimal.
+</Callout>
+
+## Fehlende Partner finden
+
+Der wichtigste Trick mit `LEFT JOIN`: Wer nach den Zeilen **ohne** Gegenstück sucht,
+verbindet mit `LEFT JOIN` und filtert dann auf `NULL`.
+
+```sql
+SELECT k.name
+FROM   kunde k
+LEFT JOIN bestellung b ON b.kunde_id = k.id
+WHERE  b.id IS NULL;
+```
+
+<Callout type="achtung" title="WHERE zerstört den LEFT JOIN">
+  Eine Bedingung auf die **rechte** Tabelle im `WHERE` macht aus einem `LEFT JOIN`
+  faktisch einen `INNER JOIN` – die aufgefüllten `NULL`-Zeilen erfüllen sie ja nie.
+
+  ```sql
+  -- verliert alle Kunden ohne Bestellung:
+  LEFT JOIN bestellung b ON b.kunde_id = k.id WHERE b.datum >= '2025-05-01'
+  -- richtig, wenn die Kunden erhalten bleiben sollen:
+  LEFT JOIN bestellung b ON b.kunde_id = k.id AND b.datum >= '2025-05-01'
+  ```
+
+  Merke: Bedingungen an die **rechte** Tabelle gehören ins `ON`, Bedingungen an die
+  **linke** ins `WHERE`.
+</Callout>
+
+## Mehr als zwei Tabellen
+
+JOINs werden einfach aneinandergehängt. Bei einer n:m-Beziehung führt der Weg immer über
+die Zwischentabelle:
+
+```sql
+SELECT k.name, a.bez, p.menge
+FROM   kunde k
+JOIN   bestellung b ON b.kunde_id = k.id
+JOIN   position   p ON p.bestellung_id = b.id
+JOIN   artikel    a ON a.id = p.artikel_id;
+```
+
+## Unterabfragen
+
+Eine Unterabfrage liefert einen Wert oder eine Werteliste für die äußere Abfrage:
+
+```sql
+-- Kunden, die mehr bestellt haben als der Durchschnitt
+SELECT name FROM kunde
+WHERE id IN (SELECT kunde_id FROM bestellung GROUP BY kunde_id HAVING COUNT(*) > 1);
+```
+
+**JOIN oder Unterabfrage?** Brauchst du Spalten aus der zweiten Tabelle in der Ausgabe,
+nimm einen JOIN. Brauchst du sie nur zum Filtern, ist eine Unterabfrage oft lesbarer.
+
+## Stolperfallen
+
+<Callout type="achtung" title="Die sechs teuersten Fehler">
+  1. **`ON` vergessen.** Ergibt das kartesische Produkt – erkennbar an absurd vielen
+     Zeilen. In Prüfungen ein sicherer Punktverlust.
+  2. **`WHERE` statt `AND` im `LEFT JOIN`.** Macht den LEFT JOIN wirkungslos, siehe oben.
+  3. **Falsche Spalten im `ON`.** Der Fremdschlüssel zeigt auf den Primärschlüssel –
+     `b.kunde_id = k.id`, nicht `b.id = k.id`.
+  4. **Mehrdeutige Spaltennamen.** Heißt die Spalte in beiden Tabellen `id`, muss überall
+     `k.id` bzw. `b.id` stehen. Sonst bricht die Abfrage ab.
+  5. **Zeilen doppelt gezählt.** Nach einem JOIN auf eine 1:n-Beziehung erscheint die
+     linke Zeile mehrfach. `COUNT(*)` zählt dann Positionen, nicht Kunden – hier hilft
+     `COUNT(DISTINCT k.id)`.
+  6. **n:m ohne Zwischentabelle verknüpft.** Zwischen `kunde` und `artikel` gibt es keine
+     direkte Verbindung; der Weg führt über `bestellung` und `position`.
+</Callout>
+
+## Übungen
+
+Alle Übungen arbeiten auf derselben Übungsdatenbank. Mit „Schema anzeigen" siehst du sie
+jederzeit. Achte auf die Sonderfälle: Ein Kunde hat nie bestellt, ein Artikel wurde nie
+gekauft.
+
+<SqlExercise
+  title="Übung 1: Der einfache JOIN"
+  task="Gib zu jeder Bestellung den Kundennamen und das Bestelldatum aus."
+  schemaId="handel"
+  starter="SELECT "
+  hint="Der Fremdschlüssel bestellung.kunde_id zeigt auf kunde.id - genau das gehört ins ON."
+  solution="SELECT k.name, b.datum FROM kunde k JOIN bestellung b ON b.kunde_id = k.id;"
+/>
+
+<SqlExercise
+  title="Übung 2: Auch die ohne Bestellung"
+  task="Gib ALLE Kunden aus, dazu die Anzahl ihrer Bestellungen. Kunden ohne Bestellung sollen mit 0 erscheinen."
+  schemaId="handel"
+  starter={`SELECT k.name
+FROM kunde k`}
+  hint="Das Wort 'ALLE' verlangt einen LEFT JOIN. COUNT(*) würde bei Kunden ohne Bestellung fälschlich 1 zählen - zähl stattdessen eine Spalte der rechten Tabelle."
+  solution={`SELECT k.name, COUNT(b.id) AS anzahl
+FROM kunde k
+LEFT JOIN bestellung b ON b.kunde_id = k.id
+GROUP BY k.id, k.name;`}
+/>
+
+<SqlExercise
+  title="Übung 3: Vier Tabellen verknüpfen"
+  task="Gib für jeden Kunden aus, welche Artikel er in welcher Menge bestellt hat - Kundenname, Artikelbezeichnung, Menge."
+  schemaId="handel"
+  starter="SELECT k.name, a.bez, p.menge"
+  hint="Von kunde nach artikel führt kein direkter Weg. Geh über bestellung und position."
+  solution={`SELECT k.name, a.bez, p.menge
+FROM kunde k
+JOIN bestellung b ON b.kunde_id = k.id
+JOIN position p ON p.bestellung_id = b.id
+JOIN artikel a ON a.id = p.artikel_id;`}
+/>
+
+<SqlExercise
+  title="Übung 4: Nie verkaufte Artikel"
+  task="Finde alle Artikel, die in keiner Bestellposition vorkommen."
+  schemaId="handel"
+  starter="SELECT a.bez FROM artikel a"
+  hint="LEFT JOIN auf position, danach auf NULL filtern - das ist das Standardmuster für 'ohne Gegenstück'."
+  solution={`SELECT a.bez
+FROM artikel a
+LEFT JOIN position p ON p.artikel_id = a.id
+WHERE p.artikel_id IS NULL;`}
+/>
+
+<MultipleChoice
+  title="Übung 5: Welcher JOIN?"
+  question="Die Aufgabe lautet: 'Geben Sie alle Kunden mit dem Datum ihrer Bestellungen aus. Kunden ohne Bestellung sollen ebenfalls erscheinen.' Welche Abfrage ist richtig?"
+  options={[
+    {
+      text: 'SELECT k.name, b.datum FROM kunde k LEFT JOIN bestellung b ON b.kunde_id = k.id',
+      correct: true,
+      explanation:
+        '„Sollen ebenfalls erscheinen" verlangt, dass die linke Tabelle vollständig bleibt - genau das leistet der LEFT JOIN. Kunden ohne Bestellung bekommen NULL beim Datum.',
+    },
+    {
+      text: 'SELECT k.name, b.datum FROM kunde k JOIN bestellung b ON b.kunde_id = k.id',
+      correct: false,
+      explanation:
+        'Der INNER JOIN wirft genau die Kunden weg, die die Aufgabe ausdrücklich sehen will. Der häufigste Fehler bei diesem Aufgabentyp.',
+    },
+    {
+      text: 'SELECT k.name, b.datum FROM kunde k, bestellung b',
+      correct: false,
+      explanation:
+        'Ohne Verknüpfungsbedingung entsteht das kartesische Produkt: jeder Kunde mit jeder Bestellung. Bei 5 Kunden und 4 Bestellungen wären das 20 Zeilen.',
+    },
+    {
+      text: 'SELECT k.name, b.datum FROM kunde k LEFT JOIN bestellung b ON b.kunde_id = k.id WHERE b.datum IS NOT NULL',
+      correct: false,
+      explanation:
+        'Das WHERE filtert genau die aufgefüllten NULL-Zeilen wieder weg - der LEFT JOIN wird dadurch wirkungslos und verhält sich wie ein INNER JOIN.',
+    },
+  ]}
+/>
+
+<FreeText
+  title="Übung 6: Doppelt gezählt"
+  question={
+    <>
+      Diese Abfrage soll zählen, wie viele Kunden es pro Ort gibt – liefert aber zu hohe
+      Zahlen:
+      <br />
+      <code>
+        SELECT k.ort, COUNT(*) FROM kunde k JOIN bestellung b ON b.kunde_id = k.id GROUP BY
+        k.ort
+      </code>
+      <br />
+      Erkläre die Ursache und nenne zwei mögliche Korrekturen.
+    </>
+  }
+  solution={
+    <>
+      Der JOIN vervielfacht jede Kundenzeile: Ein Kunde mit drei Bestellungen erscheint
+      dreimal im Zwischenergebnis. <code>COUNT(*)</code> zählt danach Bestellungen, nicht
+      Kunden. Zusätzlich fallen durch den <code>INNER JOIN</code> alle Kunden ohne
+      Bestellung ganz heraus.
+      <br />
+      <strong>Korrektur 1:</strong> <code>COUNT(DISTINCT k.id)</code> statt{' '}
+      <code>COUNT(*)</code> – zählt jeden Kunden nur einmal.
+      <br />
+      <strong>Korrektur 2:</strong> Den JOIN weglassen, wenn aus{' '}
+      <code>bestellung</code> gar nichts gebraucht wird:{' '}
+      <code>SELECT ort, COUNT(*) FROM kunde GROUP BY ort</code>. Das ist hier die
+      eigentlich richtige Antwort – der JOIN war von Anfang an überflüssig.
+    </>
+  }
+/>
+
+<Checklist
+  items={[
+    'Jeder JOIN hat eine ON-Bedingung',
+    'Im ON stehen Fremdschlüssel und Primärschlüssel, nicht zwei Primärschlüssel',
+    'Steht „alle" oder „auch ohne" in der Aufgabe? Dann LEFT JOIN',
+    'Bedingungen an die rechte Tabelle stehen im ON, nicht im WHERE',
+    'Bei doppelten Spaltennamen überall Tabellen-Alias gesetzt',
+    'Bei 1:n geprüft, ob COUNT(*) durch den JOIN zu hoch zählt',
+    'Bei n:m den Weg über die Zwischentabelle genommen',
+  ]}
+/>
