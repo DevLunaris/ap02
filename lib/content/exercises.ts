@@ -89,7 +89,24 @@ export function extractExercisesFromMdx(body: string): Array<{
   title?: string
   source: string
 }> {
-  const tree = parser.parse(body)
+  let tree
+  try {
+    tree = parser.parse(body)
+  } catch (error) {
+    /*
+     * Der MDX-Parser meldet solche Fehler kryptisch ("Unexpected character `„`
+     * after attribute name"). Die mit Abstand häufigste Ursache in deutschen
+     * Inhalten ist ein ASCII-Anführungszeichen INNERHALB eines "…"-Attributs -
+     * es beendet das Attribut vorzeitig. Deshalb hier der konkrete Hinweis.
+     */
+    const message = error instanceof Error ? error.message : String(error)
+    throw new Error(
+      `MDX lässt sich nicht parsen: ${message}\n` +
+        'Häufigste Ursache: ein " mitten in einem Attribut wie task="… „so" …". ' +
+        'Innerhalb von "…" entweder \'einfache\' Anführungszeichen nutzen oder das ' +
+        'typografische Schlusszeichen “.',
+    )
+  }
   const found: Array<{ kind: ExerciseKind; title?: string; source: string }> = []
 
   visit(tree, (node) => {

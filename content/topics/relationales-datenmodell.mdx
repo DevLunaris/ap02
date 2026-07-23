@@ -1,0 +1,311 @@
+---
+slug: relationales-datenmodell
+title: Relationales Datenmodell
+summary: >-
+  Vom fachlichen Sachverhalt zu Tabellen, Schlüsseln und Beziehungen. Kam in
+  8 von 9 ausgewerteten Prüfungen vor - fast immer als Umsetzungsaufgabe.
+learningGoals:
+  - Ein ER-Modell regelgerecht in Tabellen überführen
+  - Primär- und Fremdschlüssel korrekt setzen
+  - 1:1-, 1:n- und n:m-Beziehungen jeweils richtig umsetzen
+  - Ein Relationenschema in der üblichen Kurzschreibweise notieren
+  - Referenzielle Integrität erklären und ihre Folgen benennen
+related:
+  - erm
+  - normalisierung
+  - sql-grundlagen
+  - sql-joins
+---
+
+Ein relationales Datenmodell besteht aus Tabellen, die über Schlüssel verbunden sind. In
+der Prüfung bekommst du einen Sachverhalt in Prosa oder ein ER-Modell und sollst daraus
+Tabellen ableiten. Das ist Handwerk mit festen Regeln – und deshalb sicher zu punkten.
+
+<Callout type="merksatz" title="Der eine Gedanke">
+  Für jeden Beziehungstyp gibt es **genau eine** richtige Umsetzung. Wer die drei Regeln
+  kennt, muss nie raten:
+
+  **1:n** → Fremdschlüssel auf die **n**-Seite. **n:m** → **immer** eine eigene
+  Zwischentabelle. **1:1** → Fremdschlüssel auf eine der beiden Seiten, zusätzlich `UNIQUE`.
+</Callout>
+
+## Kernbegriffe
+
+<TermGrid>
+  <TermCard term="Relation">
+    Die Tabelle. Formal eine Menge von Tupeln – deshalb gibt es keine „erste" Zeile und
+    keine Reihenfolge ohne `ORDER BY`.
+  </TermCard>
+  <TermCard term="Tupel / Attribut">
+    Tupel = Zeile = Datensatz. Attribut = Spalte = Feld. Die IHK nutzt beide
+    Wortpaare, du solltest sie zuordnen können.
+  </TermCard>
+  <TermCard term="Primärschlüssel">
+    Attribut oder Attributkombination, die jedes Tupel eindeutig identifiziert.
+    Minimal, eindeutig, nie NULL.
+  </TermCard>
+  <TermCard term="Schlüsselkandidat">
+    Jedes Attribut, das Primärschlüssel sein **könnte**. Einer davon wird gewählt, die
+    übrigen heißen Alternativschlüssel.
+  </TermCard>
+  <TermCard term="Fremdschlüssel">
+    Attribut, das auf den Primärschlüssel einer anderen Relation verweist. Trägt die
+    Beziehung.
+  </TermCard>
+  <TermCard term="Referenzielle Integrität">
+    Jeder Fremdschlüsselwert muss in der Zieltabelle existieren – oder NULL sein.
+  </TermCard>
+</TermGrid>
+
+## Die Schreibweise
+
+Relationenschemata notiert man kurz. Primärschlüssel wird unterstrichen, Fremdschlüssel
+kursiv oder mit Pfeil markiert. Auf Papier:
+
+```
+kunde(id, name, ort)
+       ‾‾
+bestellung(id, datum, kunde_id → kunde.id)
+            ‾‾
+```
+
+Unterstreichen kannst du im Editor nicht – schreib den Primärschlüssel dann als erstes
+Attribut und kennzeichne Fremdschlüssel mit einem Pfeil. Wichtig ist, dass die Zuordnung
+erkennbar ist; die genaue Form ist nicht normiert.
+
+## Die drei Beziehungstypen
+
+### 1:n – der Normalfall
+
+Ein Kunde hat viele Bestellungen, eine Bestellung gehört zu einem Kunden.
+
+<Diagram
+  caption="1:n – der Fremdschlüssel steht auf der n-Seite"
+  code={`erDiagram
+    KUNDE ||--o{ BESTELLUNG : "gibt auf"
+    KUNDE {
+        int id PK
+        string name
+    }
+    BESTELLUNG {
+        int id PK
+        string datum
+        int kunde_id FK
+    }`}
+/>
+
+```
+kunde(id, name, ort)
+bestellung(id, datum, kunde_id → kunde.id)
+```
+
+<Callout type="tipp" title="Warum auf die n-Seite?">
+  Andersherum ginge es nicht: Der Kunde müsste sonst mehrere Bestellnummern in **einer**
+  Spalte speichern. Genau das verbietet die 1. Normalform. Auf der n-Seite steht dagegen
+  je Zeile genau ein Verweis – sauber und atomar.
+</Callout>
+
+### n:m – immer eine Zwischentabelle
+
+Eine Bestellung enthält mehrere Artikel, ein Artikel kommt in mehreren Bestellungen vor.
+Diese Beziehung lässt sich **nicht** direkt abbilden.
+
+<Diagram
+  caption="n:m – aufgelöst über die Zwischentabelle position"
+  code={`erDiagram
+    BESTELLUNG ||--o{ POSITION : enthaelt
+    ARTIKEL    ||--o{ POSITION : "steht in"
+    POSITION {
+        int bestellung_id PK
+        int artikel_id PK
+        int menge
+    }`}
+/>
+
+```
+bestellung(id, datum, kunde_id → kunde.id)
+artikel(id, bez, preis)
+position(bestellung_id → bestellung.id, artikel_id → artikel.id, menge)
+```
+
+Der Primärschlüssel der Zwischentabelle ist **zusammengesetzt** aus beiden
+Fremdschlüsseln. Zusatzattribute der Beziehung – hier `menge` – gehören genau hierhin.
+
+### 1:1 – selten, und meist ein Zeichen zum Nachdenken
+
+Ein Mitarbeiter hat genau einen Dienstwagen, ein Dienstwagen gehört einem Mitarbeiter.
+Der Fremdschlüssel kommt auf eine der beiden Seiten und bekommt zusätzlich `UNIQUE` –
+sonst wäre es eine 1:n-Beziehung.
+
+<Callout type="tipp" title="Faustregel für 1:1">
+  Setz den Fremdschlüssel auf die Seite, die **seltener** vorkommt oder **optional** ist.
+  Nicht jeder Mitarbeiter hat einen Dienstwagen, also steht `mitarbeiter_id` in der
+  Tabelle `dienstwagen` – dort ist die Spalte immer gefüllt. Umgekehrt hätte man viele
+  NULL-Werte.
+
+  Oft ist eine 1:1-Beziehung ohnehin ein Hinweis, dass beides in eine Tabelle gehört.
+</Callout>
+
+## Von der Prosa zum Modell
+
+Die Aufgabenstellung enthält die Kardinalitäten meist wörtlich. Diese Signalwörter helfen:
+
+| Formulierung | Bedeutung |
+| --- | --- |
+| „ein … genau ein …" | 1:1 |
+| „ein … mehrere …", „ein … beliebig viele …" | 1:n |
+| „mehrere … mehrere …", „jeder … kann mehrere …" | n:m |
+| „kann", „optional", „nicht jeder" | Minimalkardinalität 0 → Fremdschlüssel darf NULL sein |
+| „muss", „mindestens ein" | Minimalkardinalität 1 → `NOT NULL` |
+
+## Stolperfallen
+
+<Callout type="achtung" title="Die sechs teuersten Fehler">
+  1. **n:m direkt verknüpft.** Ein Fremdschlüssel in beiden Tabellen löst das nicht –
+     es braucht immer eine Zwischentabelle.
+  2. **Fremdschlüssel auf der 1-Seite.** Bei 1:n gehört er auf die n-Seite, sonst
+     müsste eine Spalte mehrere Werte aufnehmen.
+  3. **Zusammengesetzten Primärschlüssel vergessen.** In der Zwischentabelle sind
+     **beide** Fremdschlüssel gemeinsam der Schlüssel.
+  4. **Beziehungsattribute falsch platziert.** Die `menge` gehört zur Position, nicht
+     zum Artikel – sonst hätte jeder Artikel nur eine Menge insgesamt.
+  5. **Mehrere Werte in einer Spalte.** „telefon: 0221-123, 0171-456" verletzt die
+     1. Normalform. Solche Fälle brauchen eine eigene Tabelle.
+  6. **Kardinalität aus dem Bauch geraten.** Lies den Satz zweimal und prüfe **beide**
+     Richtungen: Kunde → Bestellung *und* Bestellung → Kunde.
+</Callout>
+
+## Übungen
+
+<SqlExercise
+  title="Übung 1: Die Zwischentabelle erkennen"
+  task="Welche Artikel hat der Kunde 'Meier' bestellt? Gib Artikelbezeichnung und Menge aus. Der Weg führt über die aufgelöste n:m-Beziehung."
+  schemaId="handel"
+  starter="SELECT a.bez, p.menge"
+  hint="Vier Tabellen: kunde → bestellung → position → artikel. Die Zwischentabelle position trägt die Menge."
+  solution={`SELECT a.bez, p.menge
+FROM kunde k
+JOIN bestellung b ON b.kunde_id = k.id
+JOIN position p ON p.bestellung_id = b.id
+JOIN artikel a ON a.id = p.artikel_id
+WHERE k.name = 'Meier';`}
+/>
+
+<SqlExercise
+  title="Übung 2: Referenzielle Integrität in Aktion"
+  task="Lege eine neue Bestellung für den Kunden mit der id 3 an, Datum '2025-07-01', Bestellnummer 104."
+  schemaId="handel"
+  starter="INSERT INTO bestellung"
+  hint="Der Fremdschlüssel kunde_id muss auf einen existierenden Kunden zeigen - id 3 gibt es."
+  solution="INSERT INTO bestellung (id, kunde_id, datum) VALUES (104, 3, '2025-07-01');"
+  compareTables={['bestellung']}
+/>
+
+<MultipleChoice
+  title="Übung 3: Wohin mit dem Fremdschlüssel?"
+  question="Ein Verlag gibt viele Bücher heraus, jedes Buch erscheint bei genau einem Verlag. Wie wird das umgesetzt?"
+  options={[
+    {
+      text: 'In buch eine Spalte verlag_id, die auf verlag.id verweist.',
+      correct: true,
+      explanation:
+        'Klassische 1:n-Beziehung: Der Fremdschlüssel steht auf der n-Seite (Buch). Jede Buchzeile verweist auf genau einen Verlag.',
+    },
+    {
+      text: 'In verlag eine Spalte buch_id, die auf buch.id verweist.',
+      correct: false,
+      explanation:
+        'Ein Verlag hat viele Bücher - in eine einzelne Spalte passt nur eines davon. Das verletzt die 1. Normalform.',
+    },
+    {
+      text: 'Eine Zwischentabelle buch_verlag mit beiden Fremdschlüsseln.',
+      correct: false,
+      explanation:
+        'Zwischentabellen sind für n:m gedacht. Hier wäre sie überflüssiger Aufwand und würde sogar mehrere Verlage je Buch erlauben - was der Sachverhalt ausschließt.',
+    },
+    {
+      text: 'Den Verlagsnamen direkt als Textspalte in buch speichern.',
+      correct: false,
+      explanation:
+        'Das erzeugt Redundanz: Bei einer Umbenennung müsste man jede Buchzeile ändern, und Tippfehler führen zu Inkonsistenzen. Genau davor schützt der Fremdschlüssel.',
+    },
+  ]}
+/>
+
+<MultipleChoice
+  title="Übung 4: Der Primärschlüssel der Zwischentabelle"
+  question="Welche Aussagen über die Tabelle position(bestellung_id, artikel_id, menge) sind richtig?"
+  options={[
+    {
+      text: 'Der Primärschlüssel ist zusammengesetzt aus bestellung_id und artikel_id.',
+      correct: true,
+      explanation:
+        'Erst beide gemeinsam identifizieren eine Zeile eindeutig - dieselbe Bestellung kann verschiedene Artikel enthalten und derselbe Artikel in verschiedenen Bestellungen vorkommen.',
+    },
+    {
+      text: 'Beide Spalten sind gleichzeitig Fremdschlüssel.',
+      correct: true,
+      explanation:
+        'Sie verweisen auf bestellung.id und artikel.id. Primär- und Fremdschlüsseleigenschaft schließen sich nicht aus.',
+    },
+    {
+      text: 'menge gehört eigentlich in die Tabelle artikel.',
+      correct: false,
+      explanation:
+        'Dann hätte jeder Artikel genau eine Menge - unabhängig von der Bestellung. Beziehungsattribute gehören in die Zwischentabelle.',
+    },
+    {
+      text: 'Die Tabelle braucht zusätzlich eine eigene id-Spalte als Primärschlüssel.',
+      correct: false,
+      explanation:
+        'Möglich, aber nicht nötig - und in der Prüfung nicht die erwartete Antwort. Der zusammengesetzte Schlüssel verhindert zusätzlich, dass derselbe Artikel zweimal in derselben Bestellung steht.',
+    },
+  ]}
+/>
+
+<FreeText
+  title="Übung 5: Vom Sachverhalt zum Schema"
+  question={
+    <>
+      Eine Schule verwaltet Kurse und Schüler: Jeder Schüler kann mehrere Kurse belegen,
+      jeder Kurs hat mehrere Schüler. Für jede Belegung wird zusätzlich das Anmeldedatum
+      gespeichert. Jeder Kurs wird von genau einer Lehrkraft geleitet, eine Lehrkraft kann
+      mehrere Kurse leiten.
+      <br />
+      Notiere das vollständige Relationenschema mit Primär- und Fremdschlüsseln.
+    </>
+  }
+  solution={
+    <>
+      <code>schueler(id, name)</code>
+      <br />
+      <code>lehrkraft(id, name)</code>
+      <br />
+      <code>kurs(id, bezeichnung, lehrkraft_id → lehrkraft.id)</code>
+      <br />
+      <code>belegung(schueler_id → schueler.id, kurs_id → kurs.id, anmeldedatum)</code>
+      <br />
+      <br />
+      Zwei Beziehungen, zwei Regeln: Schüler↔Kurs ist <strong>n:m</strong> und braucht die
+      Zwischentabelle <code>belegung</code>, deren Primärschlüssel aus beiden
+      Fremdschlüsseln zusammengesetzt ist. Das Anmeldedatum ist ein{' '}
+      <strong>Beziehungsattribut</strong> und gehört genau dorthin – nicht zum Schüler
+      (der meldet sich mehrfach an) und nicht zum Kurs.
+      <br />
+      Lehrkraft↔Kurs ist <strong>1:n</strong>, also steht der Fremdschlüssel auf der
+      n-Seite, im Kurs.
+    </>
+  }
+/>
+
+<Checklist
+  items={[
+    'Jede Relation hat einen Primärschlüssel',
+    'Bei 1:n steht der Fremdschlüssel auf der n-Seite',
+    'Jede n:m-Beziehung ist über eine Zwischentabelle aufgelöst',
+    'Der Schlüssel der Zwischentabelle ist aus beiden Fremdschlüsseln zusammengesetzt',
+    'Beziehungsattribute stehen in der Zwischentabelle, nicht in einer der Haupttabellen',
+    'Keine Spalte enthält mehrere Werte (1. Normalform)',
+    'Kardinalitäten in beide Richtungen am Aufgabentext geprüft',
+  ]}
+/>

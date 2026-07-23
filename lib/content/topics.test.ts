@@ -67,9 +67,13 @@ describe('getTopic', () => {
   })
 
   it('liefert für ein noch nicht geschriebenes Thema hasContent=false statt undefined', () => {
-    const topic = getTopic('erm')
-    expect(topic).toBeDefined()
-    expect(topic?.hasContent).toBe(false)
+    // Bewusst dynamisch: Ein fest verdrahteter Slug wird falsch, sobald das
+    // Thema geschrieben ist - genau das ist hier schon einmal passiert.
+    const ungeschrieben = getAllTopics().find((topic) => !topic.hasContent)
+
+    expect(ungeschrieben, 'alle Themen sind ausgearbeitet - Test anpassen').toBeDefined()
+    expect(ungeschrieben?.hasContent).toBe(false)
+    expect(ungeschrieben?.body).toBeUndefined()
   })
 
   it('liefert undefined für einen unbekannten Slug', () => {

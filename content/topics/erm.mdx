@@ -1,0 +1,295 @@
+---
+slug: erm
+title: ER-Modell (ERM)
+summary: >-
+  Fachliche Sachverhalte als Entitäten, Attribute und Beziehungen zeichnen -
+  der Schritt vor dem relationalen Datenmodell. In 5 von 9 Prüfungen dran.
+learningGoals:
+  - Aus einem Prosatext Entitäten, Attribute und Beziehungen herauslesen
+  - Kardinalitäten in Chen- und (min,max)-Notation angeben
+  - Ein ER-Modell regelgerecht in Tabellen überführen
+  - Schwache Entitäten erkennen und richtig modellieren
+related:
+  - relationales-datenmodell
+  - normalisierung
+  - sql-grundlagen
+  - klassendiagramm
+---
+
+Das Entity-Relationship-Modell beschreibt, **was** gespeichert werden soll – noch ohne
+Tabellen, Datentypen oder SQL. Es ist die Brücke zwischen dem Gespräch mit dem Kunden und
+der Datenbank.
+
+<Callout type="merksatz" title="Der eine Gedanke">
+  Ein ERM entsteht durch **Wortarten-Analyse** des Aufgabentexts: **Substantive** werden
+  Entitäten, **Eigenschaften** werden Attribute, **Verben** werden Beziehungen. Wer den
+  Text so durchgeht, findet das Modell fast von allein – statt es zu erfinden.
+</Callout>
+
+## Kernbegriffe
+
+<TermGrid>
+  <TermCard term="Entität / Entitätstyp">
+    Die Entität ist das einzelne Ding („Kunde Meier"), der Entitätstyp die Kategorie
+    („Kunde"). Gezeichnet wird immer der **Typ** – als Rechteck.
+  </TermCard>
+  <TermCard term="Attribut">
+    Eigenschaft eines Entitätstyps, gezeichnet als Ellipse. Das identifizierende
+    Attribut (der spätere Primärschlüssel) wird unterstrichen.
+  </TermCard>
+  <TermCard term="Beziehung">
+    Verbindung zwischen Entitätstypen, gezeichnet als Raute mit einem Verb:
+    „Kunde **gibt auf** Bestellung".
+  </TermCard>
+  <TermCard term="Kardinalität">
+    Wie viele Entitäten der einen Seite mit wie vielen der anderen in Beziehung stehen:
+    1:1, 1:n oder n:m.
+  </TermCard>
+  <TermCard term="Schwache Entität">
+    Existiert nicht ohne ihre übergeordnete Entität und hat keinen eigenen
+    vollständigen Schlüssel – etwa eine Bestellposition ohne ihre Bestellung.
+  </TermCard>
+  <TermCard term="Mehrwertiges Attribut">
+    Ein Attribut mit mehreren Werten, z. B. mehrere Telefonnummern. Wird beim Überführen
+    zu einer eigenen Tabelle.
+  </TermCard>
+</TermGrid>
+
+## Ein einfaches Modell
+
+<Diagram
+  caption="Kunde, Bestellung, Position und Artikel"
+  code={`erDiagram
+    KUNDE ||--o{ BESTELLUNG : "gibt auf"
+    BESTELLUNG ||--|{ POSITION : enthaelt
+    ARTIKEL ||--o{ POSITION : "steht in"
+    KUNDE {
+        int id PK
+        string name
+        string ort
+    }
+    BESTELLUNG {
+        int id PK
+        string datum
+        int kunde_id FK
+    }
+    POSITION {
+        int bestellung_id PK
+        int artikel_id PK
+        int menge
+    }
+    ARTIKEL {
+        int id PK
+        string bez
+        real preis
+    }`}
+/>
+
+## Die zwei Notationen
+
+In der Prüfung tauchen beide auf. Du solltest sie lesen und ineinander übersetzen können.
+
+| | Chen-Notation | (min,max)-Notation |
+| --- | --- | --- |
+| Was steht dran | `1` und `n` an den Kanten | `(0,n)`, `(1,1)` usw. |
+| Blickrichtung | von der Entität **weg** | von der Entität **aus** |
+| Aussagekraft | nur die Maximalkardinalität | Minimum **und** Maximum |
+
+<Callout type="achtung" title="Die Blickrichtung dreht sich – der häufigste Fehler">
+  Bei **Chen** steht die Zahl auf der Seite, zu der man **hinschaut**: Kunde `1` –––
+  `n` Bestellung.
+
+  Bei **(min,max)** steht die Angabe an der Entität und beschreibt, an wie vielen
+  Beziehungen **diese eine Entität** teilnimmt: Kunde `(0,n)` ––– `(1,1)` Bestellung.
+  Also: Ein Kunde hat null bis viele Bestellungen, eine Bestellung gehört zu genau einem
+  Kunden.
+
+  Wer die Notation wechselt, ohne die Blickrichtung zu drehen, dreht die ganze Beziehung
+  um. Prüfe beide Richtungen einzeln mit einem Satz.
+</Callout>
+
+## Vom ERM zum relationalen Modell
+
+Die Überführung folgt festen Regeln – dieselben wie im
+[relationalen Datenmodell](/thema/relationales-datenmodell):
+
+| Im ERM | Wird zu |
+| --- | --- |
+| Entitätstyp | eine Tabelle |
+| Attribut | eine Spalte |
+| identifizierendes Attribut | Primärschlüssel |
+| 1:n-Beziehung | Fremdschlüssel auf der n-Seite |
+| n:m-Beziehung | **eigene Zwischentabelle** |
+| 1:1-Beziehung | Fremdschlüssel auf einer Seite, zusätzlich `UNIQUE` |
+| Beziehungsattribut | Spalte in der Zwischentabelle |
+| mehrwertiges Attribut | eigene Tabelle mit Fremdschlüssel |
+| schwache Entität | Tabelle mit zusammengesetztem Schlüssel aus eigenem Attribut **und** Fremdschlüssel |
+
+## Schwache Entitäten
+
+Eine Bestellposition gibt es nicht ohne ihre Bestellung. Ihre laufende Nummer („Position
+1, 2, 3") ist nur **innerhalb** einer Bestellung eindeutig – Position 1 gibt es in jeder
+Bestellung. Der Schlüssel muss deshalb zusammengesetzt sein:
+
+```
+position(bestellung_id → bestellung.id, nummer, artikel_id → artikel.id, menge)
+```
+
+Gezeichnet wird die schwache Entität mit doppeltem Rahmen, die zugehörige Beziehung mit
+doppelter Raute.
+
+## Stolperfallen
+
+<Callout type="achtung" title="Die sechs teuersten Fehler">
+  1. **Kardinalität nur in eine Richtung geprüft.** Formuliere zwei Sätze: „Ein Kunde
+     hat … Bestellungen" **und** „Eine Bestellung gehört zu … Kunden."
+  2. **Notationen vermischt.** Entweder Chen oder (min,max) – nicht beides im selben
+     Diagramm.
+  3. **Blickrichtung bei (min,max) verdreht.** Die Angabe steht an der Entität und
+     beschreibt deren Teilnahme, nicht die der Gegenseite.
+  4. **Beziehung als Entität modelliert.** „Bestellung" ist eine Entität, „bestellt" eine
+     Beziehung. Verben werden Rauten, nicht Rechtecke.
+  5. **Identifizierendes Attribut vergessen.** Jeder Entitätstyp braucht eines –
+     unterstrichen.
+  6. **n:m im ERM belassen und nicht aufgelöst.** Im ERM ist n:m erlaubt und richtig; bei
+     der Überführung in Tabellen **muss** daraus eine Zwischentabelle werden.
+</Callout>
+
+## Übungen
+
+<DiagramExercise
+  title="Übung 1: ERM aus Prosa zeichnen"
+  task="Eine Bibliothek verleiht Bücher an Leser. Ein Leser kann mehrere Bücher ausleihen, ein Buch kann nacheinander von mehreren Lesern ausgeliehen werden. Zu jeder Ausleihe wird das Rückgabedatum gespeichert. Zeichne das ER-Modell mit Mermaid."
+  starter={`erDiagram
+    LESER ||--o{ AUSLEIHE : `}
+  solution={`erDiagram
+    LESER ||--o{ AUSLEIHE : taetigt
+    BUCH  ||--o{ AUSLEIHE : "wird verliehen in"
+    LESER {
+        int id PK
+        string name
+    }
+    BUCH {
+        int isbn PK
+        string titel
+    }
+    AUSLEIHE {
+        int leser_id PK
+        int buch_isbn PK
+        string rueckgabedatum
+    }`}
+/>
+
+<SqlExercise
+  title="Übung 2: Das überführte Modell abfragen"
+  task="Zeige, dass die n:m-Auflösung funktioniert: Gib je Artikel aus, wie oft er insgesamt bestellt wurde (Summe der Mengen). Artikel ohne Bestellung sollen mit 0 erscheinen."
+  schemaId="handel"
+  starter={`SELECT a.bez
+FROM artikel a`}
+  hint="LEFT JOIN auf die Zwischentabelle, dann gruppieren. SUM liefert für Artikel ohne Position NULL - COALESCE macht daraus 0."
+  solution={`SELECT a.bez, COALESCE(SUM(p.menge), 0) AS gesamt
+FROM artikel a
+LEFT JOIN position p ON p.artikel_id = a.id
+GROUP BY a.id, a.bez;`}
+/>
+
+<MultipleChoice
+  title="Übung 3: Kardinalität lesen"
+  question="Im ERM steht: MITARBEITER (1,1) ––– (0,n) ABTEILUNG in (min,max)-Notation. Was bedeutet das?"
+  options={[
+    {
+      text: 'Jeder Mitarbeiter gehört zu genau einer Abteilung; eine Abteilung kann null bis viele Mitarbeiter haben.',
+      correct: true,
+      explanation:
+        'Die Angabe steht jeweils an der Entität und beschreibt deren Teilnahme: (1,1) am Mitarbeiter heißt „genau eine Beziehung", (0,n) an der Abteilung heißt „keine bis beliebig viele".',
+    },
+    {
+      text: 'Jede Abteilung hat genau einen Mitarbeiter; ein Mitarbeiter kann in vielen Abteilungen sein.',
+      correct: false,
+      explanation:
+        'Das ist die verdrehte Blickrichtung - der klassische Fehler beim Wechsel zwischen Chen und (min,max). Die Angabe gehört zu der Entität, an der sie steht.',
+    },
+    {
+      text: 'Es handelt sich um eine n:m-Beziehung.',
+      correct: false,
+      explanation:
+        'Die Maximalkardinalitäten sind 1 und n - das ist 1:n. Für n:m müsste auf beiden Seiten ein n stehen.',
+    },
+    {
+      text: 'Eine Abteilung muss mindestens einen Mitarbeiter haben.',
+      correct: false,
+      explanation:
+        'Das Minimum ist 0, also darf eine Abteilung leer sein. Bei „muss mindestens einen" stünde dort (1,n).',
+    },
+  ]}
+/>
+
+<MultipleChoice
+  title="Übung 4: Was wird zur Tabelle?"
+  question="Ein ERM enthält die Entitätstypen PROJEKT und MITARBEITER, verbunden durch eine n:m-Beziehung samt Beziehungsattribut 'stunden'. Wie viele Tabellen entstehen bei der Überführung?"
+  options={[
+    {
+      text: 'Drei: projekt, mitarbeiter und eine Zwischentabelle mit den Stunden.',
+      correct: true,
+      explanation:
+        'Jeder Entitätstyp wird eine Tabelle, die n:m-Beziehung eine dritte. Das Beziehungsattribut „stunden" gehört genau in diese Zwischentabelle.',
+    },
+    {
+      text: 'Zwei: die Stunden werden als Spalte in mitarbeiter gespeichert.',
+      correct: false,
+      explanation:
+        'Dann hätte jeder Mitarbeiter nur eine Stundenzahl insgesamt, nicht je Projekt. Beziehungsattribute gehören zur Beziehung.',
+    },
+    {
+      text: 'Zwei: n:m lässt sich mit Fremdschlüsseln in beiden Tabellen abbilden.',
+      correct: false,
+      explanation:
+        'Das funktioniert nicht - jede Spalte könnte nur einen Verweis aufnehmen. n:m braucht zwingend eine Zwischentabelle.',
+    },
+    {
+      text: 'Vier: die Beziehung und ihr Attribut werden getrennt gespeichert.',
+      correct: false,
+      explanation:
+        'Beziehung und ihre Attribute landen gemeinsam in einer Tabelle. Eine zusätzliche Tabelle nur für „stunden" wäre unnötig.',
+    },
+  ]}
+/>
+
+<FreeText
+  title="Übung 5: Schwache Entität begründen"
+  question={
+    <>
+      Warum reicht bei einer Bestellposition die laufende Nummer allein nicht als
+      Primärschlüssel? Nenne die Konsequenz für das Relationenschema.
+    </>
+  }
+  solution={
+    <>
+      Die laufende Nummer ist nur <strong>innerhalb einer Bestellung</strong> eindeutig –
+      „Position 1" gibt es in jeder Bestellung. Für sich genommen identifiziert sie also
+      keine Zeile.
+      <br />
+      Die Position ist damit eine <strong>schwache Entität</strong>: Sie existiert nicht
+      ohne ihre Bestellung. Der Primärschlüssel muss deshalb{' '}
+      <strong>zusammengesetzt</strong> werden aus dem Fremdschlüssel auf die Bestellung
+      und der eigenen Nummer:
+      <br />
+      <code>position(bestellung_id → bestellung.id, nummer, artikel_id, menge)</code>
+      <br />
+      Im Diagramm wird das durch einen doppelten Rahmen um die Entität und eine doppelte
+      Raute an der Beziehung gekennzeichnet.
+    </>
+  }
+/>
+
+<Checklist
+  items={[
+    'Substantive als Entitäten, Verben als Beziehungen zugeordnet',
+    'Jeder Entitätstyp hat ein unterstrichenes identifizierendes Attribut',
+    'Kardinalität in beide Richtungen mit je einem Satz geprüft',
+    'Nur eine Notation verwendet – Chen oder (min,max)',
+    'Bei (min,max) die Blickrichtung an der Entität kontrolliert',
+    'Mehrwertige Attribute als eigene Entität ausgelagert',
+    'Beim Überführen jede n:m-Beziehung in eine Zwischentabelle aufgelöst',
+  ]}
+/>

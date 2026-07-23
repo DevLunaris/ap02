@@ -1,0 +1,308 @@
+---
+slug: sql-grundlagen
+title: SQL – Grundlagen (DDL, DML, DQL, DCL, TCL)
+summary: >-
+  Die fünf Teilsprachen von SQL und was sie jeweils dürfen. Kam in jeder der
+  ausgewerteten Prüfungen vor - meist als Einstieg vor den eigentlichen Abfragen.
+learningGoals:
+  - Eine SQL-Anweisung der richtigen Teilsprache zuordnen
+  - Tabellen mit passenden Datentypen und Constraints anlegen
+  - Erklären, warum ein DROP TABLE nicht zurückgenommen werden kann
+  - Rechte mit GRANT und REVOKE vergeben und entziehen
+  - Transaktionen mit COMMIT und ROLLBACK steuern
+related:
+  - sql-select
+  - sql-ddl
+  - transaktionen-acid
+  - relationales-datenmodell
+---
+
+SQL sieht aus wie eine Sprache, ist aber fünf. Jede Anweisung gehört zu genau einer
+Teilsprache – und daraus folgt fast alles, was in der Prüfung dazu gefragt wird.
+
+<Callout type="merksatz" title="Der eine Gedanke">
+  Ordne jede Anweisung ihrer Teilsprache zu, dann weißt du sofort, was sie anfasst
+  (**Struktur** oder **Daten**) und ob du sie **zurücknehmen** kannst. Genau daran hängt
+  die häufigste Fangfrage: Ein `DELETE` lässt sich per `ROLLBACK` rückgängig machen, ein
+  `DROP TABLE` nicht.
+</Callout>
+
+## Die fünf Teilsprachen
+
+| Kürzel | Steht für | Anweisungen | Fasst an |
+| --- | --- | --- | --- |
+| **DDL** | Data **Definition** Language | `CREATE`, `ALTER`, `DROP`, `TRUNCATE` | die Struktur |
+| **DML** | Data **Manipulation** Language | `INSERT`, `UPDATE`, `DELETE` | die Daten |
+| **DQL** | Data **Query** Language | `SELECT` | liest nur |
+| **DCL** | Data **Control** Language | `GRANT`, `REVOKE` | die Rechte |
+| **TCL** | **Transaction** Control Language | `COMMIT`, `ROLLBACK`, `SAVEPOINT` | die Klammer drumherum |
+
+<Callout type="tipp" title="Merkhilfe">
+  **D**efinition – **M**anipulation – **Q**uery – **C**ontrol – **T**ransaction.
+  Wer das Wort hinter dem Buchstaben kennt, kann jede Anweisung selbst zuordnen, statt
+  Listen auswendig zu lernen. `SELECT` **fragt ab** → Query. `GRANT` **kontrolliert** den
+  Zugriff → Control.
+</Callout>
+
+## Kernbegriffe
+
+<TermGrid>
+  <TermCard term="Constraint">
+    Regel, die die Datenbank selbst durchsetzt: `NOT NULL`, `UNIQUE`, `PRIMARY KEY`,
+    `FOREIGN KEY`, `CHECK`, `DEFAULT`. Verhindert falsche Daten, bevor sie entstehen.
+  </TermCard>
+  <TermCard term="Primärschlüssel">
+    Identifiziert eine Zeile eindeutig. Implizit `NOT NULL` **und** `UNIQUE` – beides
+    zusammen, nicht nur eins davon.
+  </TermCard>
+  <TermCard term="Referenzielle Integrität">
+    Ein Fremdschlüssel darf nur auf einen existierenden Datensatz zeigen. Die Datenbank
+    wacht darüber, nicht die Anwendung.
+  </TermCard>
+  <TermCard term="Transaktion">
+    Mehrere Anweisungen als eine Einheit: entweder alle oder keine. Abgeschlossen mit
+    `COMMIT`, verworfen mit `ROLLBACK`.
+  </TermCard>
+  <TermCard term="Implizites COMMIT">
+    DDL-Anweisungen schließen die laufende Transaktion automatisch ab. Danach ist kein
+    `ROLLBACK` mehr möglich.
+  </TermCard>
+  <TermCard term="DEFAULT">
+    Wert, den die Datenbank einsetzt, wenn beim `INSERT` keiner angegeben wurde.
+  </TermCard>
+</TermGrid>
+
+## Tabellen anlegen (DDL)
+
+```sql
+CREATE TABLE mitarbeiter (
+  id        INTEGER PRIMARY KEY,
+  name      TEXT    NOT NULL,
+  email     TEXT    UNIQUE,
+  gehalt    INTEGER CHECK (gehalt > 0),
+  aktiv     INTEGER DEFAULT 1,
+  abt_id    INTEGER REFERENCES abteilung(id)
+);
+```
+
+Gängige Datentypen – die genauen Namen unterscheiden sich je nach Datenbanksystem, die
+Kategorien nicht:
+
+| Kategorie | Typisch | Wofür |
+| --- | --- | --- |
+| Ganzzahl | `INTEGER`, `INT`, `SMALLINT` | Schlüssel, Stückzahlen |
+| Kommazahl | `DECIMAL(8,2)`, `NUMERIC` | **Geldbeträge** |
+| Fließkomma | `FLOAT`, `REAL` | Messwerte |
+| Text | `VARCHAR(50)`, `CHAR(5)`, `TEXT` | Namen, Beschreibungen |
+| Datum/Zeit | `DATE`, `TIME`, `TIMESTAMP` | Termine |
+| Wahrheitswert | `BOOLEAN` | Ja/Nein-Felder |
+
+<Callout type="achtung" title="Geld nie als FLOAT">
+  `FLOAT` und `REAL` rechnen binär und können `0.1 + 0.2` nicht exakt darstellen. Bei
+  Beträgen führt das zu Rundungsfehlern, die sich aufsummieren. Richtig ist
+  `DECIMAL(8,2)` – acht Stellen insgesamt, davon zwei nach dem Komma.
+
+  `VARCHAR(50)` speichert nur die tatsächliche Länge, `CHAR(5)` füllt immer auf fünf
+  Zeichen auf. `CHAR` also nur bei fester Länge, etwa einem Ländercode.
+</Callout>
+
+## Struktur ändern und löschen
+
+```sql
+ALTER TABLE mitarbeiter ADD COLUMN eintritt DATE;
+DROP TABLE mitarbeiter;
+```
+
+| Anweisung | Wirkung | Umkehrbar? |
+| --- | --- | --- |
+| `DELETE FROM t` | löscht Zeilen, Tabelle bleibt | ja, per `ROLLBACK` |
+| `TRUNCATE TABLE t` | leert die Tabelle schnell | **nein** (DDL) |
+| `DROP TABLE t` | löscht Zeilen **und** Struktur | **nein** (DDL) |
+
+Diese drei Zeilen sind eine der häufigsten Prüfungsfragen zum Thema überhaupt.
+
+## Rechte vergeben (DCL)
+
+```sql
+GRANT SELECT, INSERT ON mitarbeiter TO azubi;
+REVOKE INSERT ON mitarbeiter FROM azubi;
+```
+
+Der Gedanke dahinter ist das **Prinzip der geringsten Rechte**: Jede Rolle bekommt genau
+die Rechte, die sie zum Arbeiten braucht – nicht mehr. Ein Auswertungskonto braucht
+`SELECT`, kein `DELETE`.
+
+## Transaktionen (TCL)
+
+```sql
+BEGIN;
+  UPDATE konto SET stand = stand - 100 WHERE id = 1;
+  UPDATE konto SET stand = stand + 100 WHERE id = 2;
+COMMIT;   -- oder ROLLBACK, dann passiert nichts von beidem
+```
+
+Das klassische Beispiel: Bei einer Überweisung darf niemals nur die Abbuchung
+ausgeführt werden. Entweder beide `UPDATE` oder keins.
+
+<Callout type="achtung" title="DDL beendet die Transaktion">
+  Ein `CREATE`, `ALTER`, `DROP` oder `TRUNCATE` löst in den meisten Datenbanksystemen ein
+  **implizites COMMIT** aus. Alles davor ist dann festgeschrieben, und ein `ROLLBACK`
+  danach holt nichts mehr zurück.
+
+  Deshalb gilt in der Prüfung: „Kann man ein versehentliches `DROP TABLE` rückgängig
+  machen?" – Nein. Nur eine Datensicherung hilft.
+</Callout>
+
+## Stolperfallen
+
+<Callout type="achtung" title="Die sechs teuersten Fehler">
+  1. **`DELETE` und `TRUNCATE` verwechselt.** `DELETE` ist DML und umkehrbar,
+     `TRUNCATE` ist DDL und nicht.
+  2. **Geldbeträge als `FLOAT`.** Rundungsfehler, die sich aufsummieren – nimm `DECIMAL`.
+  3. **`PRIMARY KEY` zusätzlich als `NOT NULL UNIQUE` deklariert.** Doppelt gemoppelt;
+     der Primärschlüssel ist beides schon.
+  4. **Fremdschlüssel ohne passenden Datentyp.** `abt_id INTEGER` muss zu
+     `abteilung.id INTEGER` passen, sonst scheitert die Verknüpfung.
+  5. **`ROLLBACK` nach einer DDL-Anweisung erwartet.** Das implizite COMMIT hat da längst
+     zugeschlagen.
+  6. **`SELECT` der DML zugeordnet.** `SELECT` liest nur und ist DQL – es verändert nichts.
+</Callout>
+
+## Übungen
+
+<SqlExercise
+  title="Übung 1: Tabelle mit Constraints anlegen"
+  task="Lege eine Tabelle 'lieferant' an: id als Primärschlüssel, name als Pflichtfeld, ust_id eindeutig, bewertung nur zwischen 1 und 5, aktiv standardmäßig 1."
+  schema={`-- Diese Übung startet mit einer leeren Datenbank.
+CREATE TABLE platzhalter (id INTEGER PRIMARY KEY);`}
+  starter={`CREATE TABLE lieferant (
+  id INTEGER
+);`}
+  hint="Fünf Constraints sind gefragt: PRIMARY KEY, NOT NULL, UNIQUE, CHECK und DEFAULT."
+  solution={`CREATE TABLE lieferant (
+  id        INTEGER PRIMARY KEY,
+  name      TEXT    NOT NULL,
+  ust_id    TEXT    UNIQUE,
+  bewertung INTEGER CHECK (bewertung BETWEEN 1 AND 5),
+  aktiv     INTEGER DEFAULT 1
+);`}
+  compareTables={['lieferant']}
+/>
+
+<SqlExercise
+  title="Übung 2: Spalte nachträglich ergänzen"
+  task="Die Tabelle artikel braucht eine zusätzliche Spalte 'kategorie' für Text. Ergänze sie, ohne die vorhandenen Daten zu verlieren."
+  schemaId="handel"
+  starter="ALTER TABLE artikel"
+  hint="Zum Ergänzen einer Spalte braucht es keinen Umweg über eine neue Tabelle."
+  solution="ALTER TABLE artikel ADD COLUMN kategorie TEXT;"
+  compareTables={['artikel']}
+/>
+
+<SqlExercise
+  title="Übung 3: Transaktion zurücknehmen"
+  task="Erhöhe alle Artikelpreise um 10 % - und nimm die Änderung anschließend im selben Durchlauf wieder zurück. Am Ende müssen die Preise unverändert sein."
+  schemaId="handel"
+  starter={`BEGIN;
+  UPDATE artikel SET preis = preis * 1.1;`}
+  hint="Zwei TCL-Anweisungen klammern die Änderung ein. Welche der beiden verwirft sie?"
+  solution={`BEGIN;
+  UPDATE artikel SET preis = preis * 1.1;
+ROLLBACK;`}
+  compareTables={['artikel']}
+/>
+
+<MultipleChoice
+  title="Übung 4: Teilsprachen zuordnen"
+  question="Welche Zuordnungen sind richtig?"
+  options={[
+    {
+      text: 'TRUNCATE TABLE gehört zur DDL.',
+      correct: true,
+      explanation:
+        'TRUNCATE verändert die Tabelle als Struktur und löst ein implizites COMMIT aus - deshalb DDL und nicht umkehrbar.',
+    },
+    {
+      text: 'SELECT gehört zur DQL.',
+      correct: true,
+      explanation:
+        'SELECT liest ausschließlich und verändert nichts. Manche Bücher zählen es zur DML - im IHK-Kontext ist DQL die erwartete Antwort.',
+    },
+    {
+      text: 'GRANT gehört zur DML.',
+      correct: false,
+      explanation:
+        'GRANT vergibt Rechte und gehört zur DCL (Data Control Language). DML sind nur INSERT, UPDATE und DELETE.',
+    },
+    {
+      text: 'ROLLBACK gehört zur TCL.',
+      correct: true,
+      explanation:
+        'ROLLBACK steuert den Ablauf einer Transaktion - zusammen mit COMMIT und SAVEPOINT die TCL.',
+    },
+  ]}
+/>
+
+<MultipleChoice
+  title="Übung 5: Was lässt sich zurücknehmen?"
+  question="In einer offenen Transaktion wurden nacheinander ausgeführt: DELETE FROM kunde WHERE id = 5, danach DROP TABLE protokoll. Anschließend folgt ROLLBACK. Was passiert?"
+  options={[
+    {
+      text: 'Nichts wird zurückgenommen – das DROP hat vorher ein implizites COMMIT ausgelöst.',
+      correct: true,
+      explanation:
+        'Genau das ist die Falle. Die DDL-Anweisung schreibt die laufende Transaktion fest; das ROLLBACK findet nichts mehr zum Zurücknehmen vor. Der gelöschte Kunde bleibt gelöscht.',
+    },
+    {
+      text: 'Beides wird zurückgenommen, Kunde und Tabelle sind wieder da.',
+      correct: false,
+      explanation:
+        'Ein ROLLBACK wirkt nur auf DML innerhalb der laufenden Transaktion - und die wurde durch das DROP bereits beendet.',
+    },
+    {
+      text: 'Nur der gelöschte Kunde kommt zurück, die Tabelle bleibt weg.',
+      correct: false,
+      explanation:
+        'Klingt plausibel, ist aber falsch: Das implizite COMMIT beim DROP hat auch das DELETE festgeschrieben.',
+    },
+    {
+      text: 'Die Datenbank verweigert das DROP innerhalb einer offenen Transaktion.',
+      correct: false,
+      explanation:
+        'Gängige Systeme führen es aus und schließen die Transaktion dabei still ab. Genau das macht den Fehler so tückisch.',
+    },
+  ]}
+/>
+
+<FreeText
+  title="Übung 6: Rechte vergeben"
+  question={
+    <>
+      Ein Auszubildender soll die Tabelle <code>mitarbeiter</code> auswerten dürfen, aber
+      nichts verändern. Nenne die passende SQL-Anweisung und begründe, welchem Prinzip du
+      damit folgst.
+    </>
+  }
+  solution={
+    <>
+      <code>GRANT SELECT ON mitarbeiter TO azubi;</code>
+      <br />
+      Vergeben wird ausschließlich das Leserecht – kein <code>INSERT</code>,{' '}
+      <code>UPDATE</code> oder <code>DELETE</code>. Das folgt dem{' '}
+      <strong>Prinzip der geringsten Rechte</strong>: Jede Rolle erhält genau die Rechte,
+      die sie für ihre Aufgabe braucht, und keine darüber hinaus. Zurücknehmen ließe sich
+      das mit <code>REVOKE SELECT ON mitarbeiter FROM azubi;</code>.
+    </>
+  }
+/>
+
+<Checklist
+  items={[
+    'Anweisung der richtigen Teilsprache zugeordnet (DDL/DML/DQL/DCL/TCL)',
+    'Geldbeträge als DECIMAL, nicht als FLOAT',
+    'PRIMARY KEY nicht zusätzlich als NOT NULL UNIQUE geschrieben',
+    'Fremdschlüssel hat denselben Datentyp wie der Primärschlüssel',
+    'Bei „rückgängig machen?" geprüft, ob DDL im Spiel war',
+    'DELETE, TRUNCATE und DROP sauber auseinandergehalten',
+  ]}
+/>
