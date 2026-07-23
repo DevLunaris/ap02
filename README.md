@@ -234,14 +234,24 @@ implementieren, fertig – keine UI-Komponente muss angefasst werden.
 
 ## Herkunft der Daten
 
-Die Themenliste, die Kategorien und die Prioritäts-, Häufigkeits- und Punktangaben in
-`content/topics.index.json` stammen aus der öffentlich einsehbaren Übersicht von
-**[ap2-fiae.de](https://www.ap2-fiae.de)** – ein sehr gutes Projekt, das hier als
-Strukturvorlage diente. Angaben zu Prüfungshäufigkeit und Punkten sind ausschließlich
-dort übernommen, wo sie real ausgewiesen sind; fehlende Werte bleiben leer und werden
-**nicht** geschätzt.
+Die Häufigkeits- und Punktangaben in `content/topics.index.json` stammen aus der
+öffentlichen [Themen-Datenbank von Stefan Macke](https://it-berufe-podcast.de/ThemenIHK)
+– der Autor ist aktiver IHK-Prüfer und legt seine Methodik offen. Ausgewertet sind
+9 Prüfungstermine (Winter 2021 – Winter 2025). Übernommen wurden nur die Fakten;
+Zuordnung und Berechnung sind eigene Arbeit.
 
-Die Lerninhalte, der Code und die interaktiven Engines sind eigenständig geschrieben.
+**Wichtig:** Erfasst sind nur die schriftlichen Teile GA1 und GA2. Die Projektarbeit
+(50 % der Note) und WiSo (10 %) kommen darin nicht vor – ein fehlender Wert bedeutet
+also nicht „unwichtig".
+
+Vollständige Quellenangaben, Lizenzen und was bewusst **nicht** genutzt wurde:
+**[CREDITS.md](CREDITS.md)**
+
+Lerninhalte, Code und die interaktiven Engines sind eigenständig geschrieben.
 
 Prüfungsstatistiken sind Erfahrungswerte, keine Zusagen der IHK. Wer sich vorbereitet,
 sollte sich nicht allein auf Häufigkeitsangaben verlassen.
+
+## Lizenz
+
+[MIT](LICENSE) – forken, hosten, anpassen und weitergeben ausdrücklich erwünscht.
