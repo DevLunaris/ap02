@@ -8,11 +8,13 @@ learningGoals:
   - Einen gegebenen Algorithmus in Pseudocode formulieren
   - Fremden Pseudocode per Schreibtischtest Schritt für Schritt nachvollziehen
   - Kontrollstrukturen korrekt schachteln und sauber abschließen
-  - Die IHK-Konventionen einhalten, damit keine Punkte verschenkt werden
+  - Typische Fehlerquellen erkennen, bevor sie Punkte kosten
+  - Die IHK-Konventionen einhalten
 related:
   - kontrollstrukturen
   - rekursion
   - suchen-sortieren
+  - sql-select
 ---
 
 Pseudocode ist die Brücke zwischen Gedanke und Programm: strukturiert genug, um einen
@@ -20,10 +22,10 @@ Algorithmus eindeutig zu beschreiben, aber ohne die Syntaxregeln einer konkreten
 In der Prüfung ist er der Standard, weil er unabhängig davon funktioniert, ob du Java,
 C# oder Python gelernt hast.
 
-<Callout type="merksatz" title="Warum das Thema so viel bringt">
-  Pseudocode ist der Dauergast in GA2. Wer sicher tracen kann, holt hier zuverlässig
-  Punkte - und zwar auch dann, wenn der dargestellte Algorithmus selbst unbekannt ist.
-  Tracen ist eine mechanische Fertigkeit, kein Ratespiel.
+<Callout type="merksatz" title="Warum dieses Thema so viel bringt">
+  Tracen ist eine **mechanische Fertigkeit**, kein Ratespiel. Wer die Wertetabelle
+  diszipliniert führt, löst auch Aufgaben zu Algorithmen, die er noch nie gesehen hat.
+  Genau deshalb lohnt sich Üben hier mehr als bei jedem anderen Thema.
 </Callout>
 
 ## Kernbegriffe
@@ -38,19 +40,27 @@ C# oder Python gelernt hast.
     ausführbar, aber eindeutig lesbar.
   </TermCard>
   <TermCard term="Schreibtischtest">
-    Manuelles Durchspielen eines Algorithmus mit konkreten Werten. Der Zustand aller
-    Variablen wird dabei in einer Wertetabelle mitgeführt.
+    Manuelles Durchspielen eines Algorithmus mit konkreten Werten. Auch „Trace" oder
+    „Dry Run" genannt.
   </TermCard>
   <TermCard term="Wertetabelle">
-    Tabelle mit einer Spalte je Variable und einer Zeile je Durchlauf. Zusätzlich eine
-    Spalte für die Ausgabe.
+    Tabelle mit einer Spalte je Variable und einer Zeile je Änderung. Dazu eine Spalte
+    für die Ausgabe.
+  </TermCard>
+  <TermCard term="Terminierung">
+    Ein Algorithmus endet nach endlich vielen Schritten. Fehlt sie, ist es kein
+    Algorithmus – auch wenn der Code sonst korrekt aussieht.
+  </TermCard>
+  <TermCard term="Laufvariable">
+    Die Zählvariable einer Schleife, klassisch `i`. Ihr Wert steuert, wie oft der Rumpf
+    ausgeführt wird.
   </TermCard>
 </TermGrid>
 
 ## Notation
 
-Die IHK nutzt eine deutschsprachige Notation. Sie ist nicht bis ins Detail normiert -
-diese Varianten solltest du aber lesen und schreiben können:
+Die IHK nutzt eine deutschsprachige Notation, die **nicht bis ins Detail normiert** ist.
+Diese Varianten solltest du lesen und schreiben können:
 
 | Konstrukt | Schreibweise |
 | --- | --- |
@@ -59,14 +69,17 @@ diese Varianten solltest du aber lesen und schreiben können:
 | Kopfgesteuerte Schleife | `SOLANGE … TUE` / `ENDE SOLANGE` |
 | Fußgesteuerte Schleife | `WIEDERHOLE` / `BIS …` |
 | Zählschleife | `FÜR i VON 1 BIS n [SCHRITT s] TUE` / `ENDE FÜR` |
-| Funktion | `FUNKTION name(p: TYP) → TYP` / `GIB x ZURÜCK` / `ENDE FUNKTION` |
+| Funktion | `FUNKTION name(p)` / `GIB x ZURÜCK` / `ENDE FUNKTION` |
 | Ausgabe | `GIB x AUS` |
 | Operatoren | `MOD`, `DIV`, `UND`, `ODER`, `NICHT` |
+| Vergleich | `=`, `<>`, `<`, `>`, `<=`, `>=` |
 
-<Callout type="achtung" title="Kopf- oder fußgesteuert - der Unterschied zählt">
+<Callout type="achtung" title="Kopf- oder fußgesteuert – der Unterschied zählt">
   `SOLANGE` prüft **vor** dem ersten Durchlauf und kann null Mal laufen.
-  `WIEDERHOLE … BIS` prüft **danach** und läuft immer mindestens einmal. Diese
-  Unterscheidung ist ein Klassiker in Multiple-Choice-Fragen.
+  `WIEDERHOLE … BIS` prüft **danach** und läuft immer mindestens einmal.
+
+  Klassische Prüfungsfrage: Was gibt `WIEDERHOLE … BIS i > 5` aus, wenn `i` schon bei 10
+  startet? Antwort: einen Durchlauf. Probier es unten im Tracer aus.
 </Callout>
 
 ## Der Schreibtischtest
@@ -77,35 +90,88 @@ Die Methode ist immer dieselbe:
 2. Startwerte eintragen.
 3. Zeile für Zeile abarbeiten und **nach jeder Zuweisung** eine neue Zeile schreiben.
 4. Bei jeder Bedingung notieren, ob sie wahr oder falsch war.
-5. Nichts im Kopf rechnen - genau da entstehen die Fehler.
+5. Nichts im Kopf rechnen – genau da entstehen die Fehler.
+
+Der Tracer unten macht exakt das automatisch. Nutze ihn zum **Kontrollieren**, nicht zum
+Ersetzen: In der Prüfung führst du die Tabelle von Hand.
 
 <PseudocodeTracer
   title="Beispiel: Summe von 1 bis 5"
-  task="Verfolge, wie sich summe und i über die Durchläufe verändern."
+  task="Geh Schritt für Schritt durch und beobachte, wie summe und i sich verändern. Die Spalte 'Aktion' zeigt, was jeder Schritt bewirkt hat."
   code={`summe ← 0
 FÜR i VON 1 BIS 5 TUE
   summe ← summe + i
 ENDE FÜR
 GIB summe AUS`}
-  expectedOutput={['15']}
+  variables={['i', 'summe']}
+/>
+
+## Schleifen richtig zählen
+
+Wie oft läuft eine Schleife? Das ist die häufigste Teilfrage überhaupt:
+
+| Kopf | Anzahl Durchläufe |
+| --- | --- |
+| `FÜR i VON 1 BIS n` | `n` |
+| `FÜR i VON 0 BIS n` | `n + 1` |
+| `FÜR i VON 0 BIS n - 1` | `n` |
+| `FÜR i VON 1 BIS n SCHRITT 2` | `n / 2` aufgerundet |
+| `FÜR i VON n BIS 1 SCHRITT -1` | `n` |
+
+<Callout type="tipp" title="Wenn du unsicher bist">
+  Setz die kleinste sinnvolle Zahl ein – meist `n = 1` oder `n = 2` – und zähl von Hand
+  durch. Das dauert zehn Sekunden und ist zuverlässiger als jede Formel im Kopf.
+</Callout>
+
+## Funktionen
+
+```
+FUNKTION fakultaet(n)
+  WENN n <= 1 DANN
+    GIB 1 ZURÜCK
+  ENDE WENN
+  GIB n * fakultaet(n - 1) ZURÜCK
+ENDE FUNKTION
+```
+
+Beim Tracen einer Funktion gilt: Jeder Aufruf hat seine **eigenen** lokalen Variablen. Ein
+`n` im Aufruf `fakultaet(3)` hat nichts mit dem `n` in `fakultaet(2)` zu tun. In der
+Wertetabelle unten erkennst du die Aufruftiefe an den vorangestellten Zeichen `›`.
+
+<PseudocodeTracer
+  title="Rekursion beobachten"
+  task="Verfolge, wie sich die Aufrufe stapeln - und wie die Rückgabewerte danach von innen nach außen zurücklaufen."
+  code={`FUNKTION fakultaet(n)
+  WENN n <= 1 DANN
+    GIB 1 ZURÜCK
+  ENDE WENN
+  GIB n * fakultaet(n - 1) ZURÜCK
+ENDE FUNKTION
+
+GIB fakultaet(4) AUS`}
 />
 
 ## Stolperfallen
 
-<Callout type="achtung" title="Die fünf teuersten Fehler">
-  1. **Off-by-One**: `VON 1 BIS n` läuft n Mal, `VON 0 BIS n` läuft n+1 Mal.
-  2. **Endlosschleife**: Die Zählvariable wird im `SOLANGE`-Rumpf nicht verändert.
-  3. **Indexgrenzen**: Bei Arrays der Länge n ist der letzte gültige Index n-1 - sofern
-     die Aufgabe bei 0 beginnt. Steht in der Angabe nichts, kurz begründen, was du annimmst.
-  4. **Zuweisung statt Vergleich**: `←` weist zu, `=` vergleicht. In Bedingungen nie `←`.
-  5. **Fehlender Abschluss**: Jedes `WENN` braucht ein `ENDE WENN`, jede Schleife ihr Ende.
+<Callout type="achtung" title="Die sechs teuersten Fehler">
+  1. **Off-by-One.** `VON 1 BIS n` läuft `n` Mal, `VON 0 BIS n` läuft `n + 1` Mal. Bei
+     Arrays fast immer die Fehlerquelle Nummer eins.
+  2. **Endlosschleife.** Die Bedingung wird im `SOLANGE`-Rumpf nie verändert – `i ← i + 1`
+     vergessen.
+  3. **Indexgrenzen.** Bei einem Array der Länge `n` mit Start bei 0 ist der letzte
+     gültige Index `n - 1`. Steht in der Angabe nichts, schreib deine Annahme dazu.
+  4. **Zuweisung statt Vergleich.** `←` weist zu, `=` vergleicht. In Bedingungen nie `←`.
+  5. **Fehlender Abschluss.** Jedes `WENN` braucht `ENDE WENN`, jede Schleife ihr Ende.
+     Sauber einrücken – das findet den Fehler von selbst.
+  6. **Variable nicht initialisiert.** `summe ← summe + i`, ohne dass `summe` vorher einen
+     Wert bekam.
 </Callout>
 
 ## Übungen
 
 <PseudocodeTracer
   title="Übung 1: Was gibt dieser Algorithmus aus?"
-  task="Führe einen Schreibtischtest durch und trage die vollständige Ausgabe ein - eine Zahl je Zeile."
+  task="Führe zuerst selbst einen Schreibtischtest auf Papier durch. Trage dann deine erwartete Ausgabe unten ein - eine Zahl je Zeile - und drücke Prüfen."
   code={`n ← 12
 i ← 1
 SOLANGE i <= n TUE
@@ -115,6 +181,41 @@ SOLANGE i <= n TUE
   i ← i + 1
 ENDE SOLANGE`}
   expectedOutput={['1', '2', '3', '4', '6', '12']}
+/>
+
+<PseudocodeTracer
+  title="Übung 2: Fußgesteuerte Schleife"
+  task="Vorsicht - hier startet i bereits über der Grenze. Wie viele Zeilen kommen heraus?"
+  code={`i ← 8
+WIEDERHOLE
+  GIB i AUS
+  i ← i + 1
+BIS i > 5`}
+  expectedOutput={['8']}
+/>
+
+<PseudocodeTracer
+  title="Übung 3: Array vertauschen"
+  task="Ein Tauschvorgang mit Hilfsvariable. Trage die Ausgabe ein - das Array wird als [a, b, c] dargestellt."
+  code={`werte ← [7, 2, 9]
+hilf ← werte[0]
+werte[0] ← werte[2]
+werte[2] ← hilf
+GIB werte AUS`}
+  expectedOutput={['[9, 2, 7]']}
+/>
+
+<PseudocodeTracer
+  title="Übung 4: Fehlersuche"
+  task="Dieser Algorithmus soll die größte Zahl im Array ausgeben - liefert aber 9 statt 15. Finde den Fehler, korrigiere den Code über 'Bearbeiten' und prüfe mit dem Tracer, ob es jetzt stimmt."
+  code={`zahlen ← [4, 9, 15]
+groesstes ← 0
+FÜR i VON 0 BIS 1 TUE
+  WENN zahlen[i] > groesstes DANN
+    groesstes ← zahlen[i]
+  ENDE WENN
+ENDE FÜR
+GIB groesstes AUS`}
 />
 
 <MultipleChoice
@@ -147,11 +248,40 @@ ENDE SOLANGE`}
   ]}
 />
 
+<MultipleChoice
+  question="Ein Array a hat die Länge 5 und wird ab Index 0 gezählt. Welche Schleifenköpfe laufen fehlerfrei über alle Elemente?"
+  options={[
+    {
+      text: 'FÜR i VON 0 BIS 4 TUE',
+      correct: true,
+      explanation: 'Fünf Durchläufe mit den Indizes 0 bis 4 - genau die gültigen Indizes.',
+    },
+    {
+      text: 'FÜR i VON 0 BIS Länge(a) - 1 TUE',
+      correct: true,
+      explanation:
+        'Die robuste Schreibweise: Sie passt sich der tatsächlichen Länge an. In der Prüfung immer diese Form bevorzugen.',
+    },
+    {
+      text: 'FÜR i VON 1 BIS 5 TUE',
+      correct: false,
+      explanation:
+        'Index 0 wird übersprungen, dafür ist Index 5 ein Zugriff außerhalb des Arrays - gleich zwei Fehler.',
+    },
+    {
+      text: 'FÜR i VON 0 BIS Länge(a) TUE',
+      correct: false,
+      explanation:
+        'Ein Durchlauf zu viel: Der letzte Zugriff geht auf Index 5, den es nicht gibt. Der klassische Off-by-One.',
+    },
+  ]}
+/>
+
 <FreeText
   question={
     <>
-      Erkläre in zwei bis drei Sätzen, warum ein Algorithmus <strong>terminieren</strong> muss
-      und woran du im Pseudocode erkennst, dass eine Schleife das nicht tut.
+      Erkläre in zwei bis drei Sätzen, warum ein Algorithmus <strong>terminieren</strong>{' '}
+      muss und woran du im Pseudocode erkennst, dass eine Schleife das nicht tut.
     </>
   }
   solution={
@@ -159,8 +289,31 @@ ENDE SOLANGE`}
       Ein Algorithmus muss nach endlich vielen Schritten enden, sonst liefert er nie ein
       Ergebnis und erfüllt die Definition nicht. Im Pseudocode erkennt man drohende
       Nicht-Terminierung daran, dass keine Anweisung im Schleifenrumpf die Abbruchbedingung
-      beeinflusst - typischerweise, weil die Zählvariable nicht verändert wird oder in die
+      beeinflusst – typischerweise, weil die Zählvariable nicht verändert wird oder in die
       falsche Richtung läuft.
+    </>
+  }
+/>
+
+<FreeText
+  question={
+    <>
+      In Übung 4 lieferte der Algorithmus 9 statt 15. Benenne <strong>beide</strong>
+      {' '}Schwachstellen des Codes – die, die den Fehler verursacht, und die, die bei
+      anderen Daten zum Problem würde.
+    </>
+  }
+  solution={
+    <>
+      <strong>Der eigentliche Fehler:</strong> Die Schleife läuft nur{' '}
+      <code>VON 0 BIS 1</code> und betrachtet damit nur die Indizes 0 und 1. Das größte
+      Element steht aber an Index 2 und wird nie angeschaut – ein klassischer
+      Off-by-One-Fehler durch eine fest eingetippte Obergrenze. Richtig ist{' '}
+      <code>VON 0 BIS Länge(zahlen) - 1</code>.
+      <br />
+      <strong>Die zweite Schwachstelle:</strong> <code>groesstes ← 0</code> als Startwert
+      geht nur gut, solange alle Zahlen positiv sind. Bei ausschließlich negativen Werten
+      käme fälschlich 0 heraus. Sauber ist <code>groesstes ← zahlen[0]</code>.
     </>
   }
 />
@@ -169,9 +322,11 @@ ENDE SOLANGE`}
   items={[
     'Jede Variable vor der ersten Verwendung initialisiert',
     'Jede Schleife hat eine Bedingung, die sich im Rumpf verändert',
-    'Jedes WENN / SOLANGE / FÜR ist sauber abgeschlossen',
+    'Jedes WENN / SOLANGE / FÜR ist sauber abgeschlossen und eingerückt',
     '← für Zuweisung, = für Vergleich - konsequent getrennt',
     'Bei Arrays geprüft, ob die Indizierung bei 0 oder 1 beginnt',
+    'Schleifengrenzen mit Länge(a) - 1 statt fester Zahl geschrieben',
+    'Startwert bei Minimum-/Maximumsuche aus den Daten genommen, nicht 0',
     'Schreibtischtest mit einem kleinen Beispiel gegengerechnet',
   ]}
 />

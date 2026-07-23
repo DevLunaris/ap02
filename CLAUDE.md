@@ -22,7 +22,7 @@ beschreibt, **wie** der Code aufgebaut ist und wie man ihn erweitert.
 npm run dev        # Entwicklungsserver auf :3000
 npm run build      # Produktionsbuild (prüft Typen + Lint + rendert alle Seiten)
 npm run typecheck  # nur tsc
-npm run test       # Vitest (143 Tests)
+npm run test       # Vitest (156 Tests, inkl. aller Übungen aus den Inhalten)
 ```
 
 Unter Windows startet `start.bat` den Dev-Server komfortabler: Es installiert bei Bedarf
@@ -119,6 +119,47 @@ related:                  # optional, müssen existierende Slugs sein
 4. Aufbau des Textteils (an ap2-fiae.de angelehnt):
    Einleitung → `## Kernbegriffe` (TermGrid) → Erklärteil → Stolperfallen (Callout) →
    `## Übungen` (mindestens zwei) → `<Checklist />`.
+
+## Maßstab für neue Themen
+
+`pseudocode`, `sql-select` und `aktivitaetsdiagramm` sind die Referenz. Wer ein weiteres
+Thema schreibt, orientiert sich daran:
+
+- **Ein Merksatz-Callout weit oben**, der sagt, warum das Thema Punkte bringt und worauf
+  es in der Prüfung wirklich ankommt.
+- **Ein tragender Gedanke statt einer Regelliste.** Bei `sql-select` ist das die
+  Auswertungsreihenfolge - aus ihr lassen sich drei Prüfungsantworten herleiten, statt sie
+  einzeln auswendig zu lernen. Suche pro Thema nach diesem einen Hebel.
+- **Genau sechs Stolperfallen** in einem `achtung`-Callout, nummeriert und mit dem
+  konkreten Fehler, nicht dem abstrakten Prinzip.
+- **Vier bis sechs Übungen**, gemischt: ausführbar (Tracer/SQL/C#), Multiple Choice mit
+  Begründung für **jede** Option, mindestens ein Freitext.
+- **Begründungen für falsche Antworten sind der eigentliche Inhalt.** „Das ist falsch"
+  bringt nichts; „das wäre COUNT(*) - das zählt Zeilen und ignoriert NULL nicht" schon.
+- **Checkliste am Ende** als Abhakliste für die letzten Minuten vor der Abgabe.
+- **Ehrlich sein, wo das Werkzeug an Grenzen stößt.** Beispiel: Mermaid kennt keine echten
+  UML-Symbole - das steht so im Aktivitätsdiagramm-Thema, damit niemand die Mermaid-Form
+  auf den Prüfungsbogen malt.
+
+### Übungen werden automatisch geprüft
+
+[lib/content/exercises.test.ts](lib/content/exercises.test.ts) liest alle MDX-Dateien,
+zieht die Aufgaben heraus und lässt sie **wirklich laufen**:
+
+| Prüfung | Was auffällt |
+| --- | --- |
+| Seed-Schema wird ausgeführt | Tippfehler im `CREATE TABLE` |
+| Musterlösung wird ausgeführt | fehlerhafte Musterlösung |
+| SELECT-Lösung liefert > 0 Zeilen | Aufgabe, deren Lösung leer ist |
+| Pseudocode läuft fehlerfrei | Endlosschleife, Syntaxfehler |
+| `expectedOutput` stimmt exakt | richtige Antwort würde als falsch gewertet |
+
+Ein Inhaltsfehler fällt sonst erst auf, wenn jemand davorsitzt und lernt - also im
+ungünstigsten Moment. **Nach jeder Inhaltsänderung `npm test` laufen lassen.**
+
+Grenze: Aufgaben ohne `expectedOutput` (z. B. absichtlich fehlerhafter Code zum Suchen)
+werden nur auf „läuft durch" geprüft. Ob der eingebaute Fehler sich auch zeigt, musst du
+selbst nachrechnen.
 
 ## MDX-Komponenten-API
 
@@ -344,6 +385,8 @@ docker exec ap2-piston /piston/piston ppman install dotnet   # einmalig
   *Offen:* Der `piston`-Service ist geschrieben, aber nie gegen eine laufende Instanz
   getestet worden - auf dem Entwicklungsrechner gibt es kein Docker. Vor Phase 4
   einmal `docker compose up` und eine C#-Übung ausführen.
-- **Phase 4 - drei Musterthemen:** `pseudocode`, `sql-select`, `aktivitaetsdiagramm`.
+- **Phase 4 - drei Musterthemen: fertig.** `pseudocode`, `sql-select` und
+  `aktivitaetsdiagramm` sind ausgearbeitet und setzen den Qualitätsmaßstab - siehe
+  [Maßstab für neue Themen](#massstab-fuer-neue-themen).
 - **Phase 5 - Lern-Features:** `useProgress()` auf localStorage mit JSON-Export/Import,
   Statusknöpfe, Übungspool, FlexSearch, Tastaturkürzel.

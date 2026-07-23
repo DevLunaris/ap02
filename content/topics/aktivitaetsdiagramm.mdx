@@ -1,0 +1,315 @@
+---
+slug: aktivitaetsdiagramm
+title: Aktivitätsdiagramm
+summary: >-
+  Abläufe grafisch darstellen - mit Aktionen, Entscheidungen und Parallelität.
+  Der Dauerbrenner in "Planen eines Softwareproduktes".
+learningGoals:
+  - Einen beschriebenen Ablauf als Aktivitätsdiagramm zeichnen
+  - Die UML-Notation korrekt und vollständig verwenden
+  - Entscheidung und Parallelität sauber trennen
+  - Ein gegebenes Diagramm lesen und Fehler darin benennen
+  - Verantwortlichkeiten mit Partitionen (Swimlanes) darstellen
+related:
+  - bpmn
+  - kontrollstrukturen
+  - sequenzdiagramm
+  - zustandsdiagramm
+  - anwendungsfalldiagramm
+---
+
+Das Aktivitätsdiagramm zeigt einen Ablauf: Was passiert nacheinander, wo wird entschieden,
+was läuft parallel. Es ist im Kern ein Flussdiagramm mit strengerer Notation – und damit
+das UML-Diagramm, das einem Algorithmus am nächsten kommt.
+
+<Callout type="merksatz" title="Was die Prüfung wirklich verlangt">
+  Fast immer steht ein Prozess in Prosa in der Angabe („Der Kunde bestellt … falls der
+  Artikel vorrätig ist …"), und du sollst ihn zeichnen. Punkte gibt es für **korrekte
+  Symbole** und **vollständige Bedingungen** – nicht für Schönheit. Wer die sechs Symbole
+  unten sicher beherrscht, holt hier zuverlässig ab.
+</Callout>
+
+## Kernbegriffe
+
+<TermGrid>
+  <TermCard term="Aktion">
+    Ein einzelner, nicht weiter zerlegter Arbeitsschritt. Symbol: Rechteck mit abgerundeten
+    Ecken. Beschriftung als Tätigkeit: „Rechnung erstellen".
+  </TermCard>
+  <TermCard term="Aktivität">
+    Der gesamte modellierte Ablauf – also das, was das Diagramm insgesamt zeigt. Eine
+    Aktivität besteht aus Aktionen.
+  </TermCard>
+  <TermCard term="Entscheidungsknoten">
+    Raute mit **einem** eingehenden und **mehreren** ausgehenden Pfeilen. Jeder ausgehende
+    Pfeil trägt eine Bedingung in eckigen Klammern.
+  </TermCard>
+  <TermCard term="Zusammenführung">
+    Raute mit mehreren eingehenden und **einem** ausgehenden Pfeil. Führt getrennte Wege
+    wieder zusammen – ohne zu warten.
+  </TermCard>
+  <TermCard term="Parallelisierung (Fork)">
+    Dicker Balken, der einen Ablauf in mehrere **gleichzeitig** laufende Stränge teilt.
+  </TermCard>
+  <TermCard term="Synchronisation (Join)">
+    Dicker Balken, der parallele Stränge wieder vereint. Wartet, bis **alle** eingehenden
+    Stränge angekommen sind.
+  </TermCard>
+</TermGrid>
+
+## Die Notation
+
+| Element | Symbol | Regel |
+| --- | --- | --- |
+| Startknoten | ausgefüllter Kreis | Genau **einer** je Diagramm |
+| Aktion | abgerundetes Rechteck | Beschriftung als Tätigkeit |
+| Kontrollfluss | Pfeil | Verbindet die Elemente |
+| Entscheidung | Raute | 1 rein, n raus – jede Kante mit `[Bedingung]` |
+| Zusammenführung | Raute | n rein, 1 raus – keine Bedingungen |
+| Fork / Join | dicker Balken | Fork: 1 rein, n raus. Join: n rein, 1 raus |
+| Endknoten | Kreis mit ausgefülltem Punkt | Beendet die gesamte Aktivität |
+
+<Callout type="achtung" title="Raute ist nicht gleich Raute">
+  Entscheidung und Zusammenführung sehen identisch aus – unterschieden werden sie **nur**
+  durch die Anzahl der Pfeile. Eine Raute mit zwei eingehenden **und** zwei ausgehenden
+  Pfeilen ist ein Fehler: Trenne sie in eine Zusammenführung und danach eine Entscheidung.
+</Callout>
+
+## Ein einfacher Ablauf
+
+<Diagram
+  caption="Bestellung mit Verfügbarkeitsprüfung"
+  code={`flowchart TD
+    Start(( )) --> A[Bestellung erfassen]
+    A --> D{Artikel vorraetig?}
+    D -->|ja| B[Ware versenden]
+    D -->|nein| C[Nachbestellen]
+    C --> B
+    B --> E[Rechnung erstellen]
+    E --> Ende(((" ")))
+
+    style Start fill:#333,stroke:#333
+    style Ende fill:#fff,stroke:#333,stroke-width:3px`}
+/>
+
+Beachte: Die Entscheidung hat **beide** Fälle beschriftet. Ein unbeschrifteter Ausgang
+kostet Punkte, auch wenn „klar" ist, was gemeint war.
+
+## Parallelität
+
+Sobald zwei Dinge **gleichzeitig** passieren, brauchst du Fork und Join – keine Raute. Der
+Unterschied ist prüfungsrelevant:
+
+- **Entscheidung:** Es wird **einer** der Wege gegangen (entweder/oder).
+- **Fork:** Es werden **alle** Wege gegangen (sowohl/als auch).
+
+<Diagram
+  caption="Fork und Join: Verpacken und Rechnung schreiben laufen parallel"
+  code={`flowchart TD
+    Start(( )) --> A[Bestellung pruefen]
+    A --> F[" "]
+    F --> B[Ware verpacken]
+    F --> C[Rechnung erstellen]
+    B --> J[" "]
+    C --> J
+    J --> D[Paket versenden]
+    D --> Ende(((" ")))
+
+    style F fill:#333,stroke:#333,height:6px
+    style J fill:#333,stroke:#333,height:6px
+    style Start fill:#333,stroke:#333`}
+/>
+
+<Callout type="tipp" title="Der Join wartet">
+  Ein Join lässt den Ablauf erst weiterlaufen, wenn **alle** eingehenden Stränge fertig
+  sind. Genau das ist der Sinn: „Versenden" darf erst starten, wenn verpackt **und**
+  abgerechnet wurde. Wer stattdessen eine Zusammenführung (Raute) zeichnet, sagt aus, dass
+  es weitergeht, sobald **einer** der Stränge ankommt – ein inhaltlicher Fehler.
+</Callout>
+
+## Partitionen (Swimlanes)
+
+Wenn die Aufgabe fragt, **wer** was macht, teilst du das Diagramm in Spalten oder Zeilen –
+je eine Partition pro Rolle oder Abteilung. Jede Aktion steht in der Bahn desjenigen, der
+sie ausführt.
+
+<Diagram
+  caption="Partitionen als Untergraphen: Kunde, Vertrieb, Lager"
+  code={`flowchart TD
+    subgraph Kunde
+      A[Bestellung aufgeben]
+      E[Ware empfangen]
+    end
+    subgraph Vertrieb
+      B[Bestellung pruefen]
+      D[Rechnung erstellen]
+    end
+    subgraph Lager
+      C[Ware kommissionieren]
+    end
+    A --> B --> C --> D --> E`}
+/>
+
+<Callout type="achtung" title="Mermaid ist nur eine Annäherung">
+  Die Diagramme hier sind mit Mermaid gezeichnet, das keine echten UML-Symbole kennt –
+  Fork und Join sind hier nur schmale Kästen, Start und Ende nur Kreise. Für das
+  **Durchdenken** der Struktur reicht das.
+
+  Auf dem Prüfungsbogen zeichnest du von Hand und musst die **richtigen Symbole**
+  verwenden: ausgefüllter Kreis, abgerundetes Rechteck, Raute, dicker Balken, Kreis mit
+  Punkt. Übe die Symbole also zusätzlich auf Papier.
+</Callout>
+
+## Stolperfallen
+
+<Callout type="achtung" title="Die sechs teuersten Fehler">
+  1. **Endknoten vergessen.** Jeder Pfad muss in einem Endknoten münden.
+  2. **Unbeschriftete Kante an der Entscheidung.** Jeder Ausgang braucht `[Bedingung]`,
+     auch der „Sonst"-Fall.
+  3. **Bedingungen überlappen oder haben Lücken.** `[x < 10]` und `[x > 10]` lässt den Fall
+     `x = 10` offen – der Ablauf bliebe stecken.
+  4. **Fork ohne Join.** Wer parallelisiert, muss auch wieder synchronisieren, bevor es
+     gemeinsam weitergeht.
+  5. **Raute statt Balken für Parallelität.** Entweder/oder ist nicht sowohl/als auch.
+  6. **Aktionen als Substantiv benannt.** „Rechnung" ist keine Aktion, „Rechnung erstellen"
+     schon.
+</Callout>
+
+## Übungen
+
+<DiagramExercise
+  title="Übung 1: Login mit drei Versuchen"
+  task="Zeichne den Ablauf einer Anmeldung: Passwort eingeben, prüfen. Bei richtigem Passwort ist der Nutzer angemeldet. Bei falschem Passwort wird der Zähler erhöht; nach dem dritten Fehlversuch wird das Konto gesperrt, sonst darf erneut eingegeben werden."
+  starter={`flowchart TD
+    Start(( )) --> Init[versuche = 0]
+    Init --> `}
+  solution={`flowchart TD
+    Start(( )) --> Init[versuche = 0]
+    Init --> Eingabe[Passwort eingeben]
+    Eingabe --> Pruef{Passwort korrekt?}
+    Pruef -->|ja| Erfolg[Nutzer anmelden]
+    Erfolg --> EndeOk((("ok")))
+    Pruef -->|nein| Zaehl[versuche = versuche + 1]
+    Zaehl --> Limit{versuche >= 3?}
+    Limit -->|ja| Sperre[Konto sperren]
+    Sperre --> EndeSperre((("gesperrt")))
+    Limit -->|nein| Eingabe`}
+/>
+
+<DiagramExercise
+  title="Übung 2: Parallele Bearbeitung"
+  task="Ein Urlaubsantrag geht ein. Danach prüfen Personalabteilung und Fachvorgesetzter gleichzeitig. Erst wenn beide fertig sind, wird entschieden: bei beidseitiger Zustimmung genehmigt, sonst abgelehnt. Verwende Fork und Join."
+  starter={`flowchart TD
+    Start(( )) --> A[Antrag eingehen]
+    A --> `}
+  solution={`flowchart TD
+    Start(( )) --> A[Antrag eingehen]
+    A --> F[" "]
+    F --> B[Personalabteilung pruefen]
+    F --> C[Vorgesetzten pruefen]
+    B --> J[" "]
+    C --> J
+    J --> D{beide zugestimmt?}
+    D -->|ja| E[Antrag genehmigen]
+    D -->|nein| G[Antrag ablehnen]
+    E --> Ende(((" ")))
+    G --> Ende
+
+    style F fill:#333,stroke:#333,height:6px
+    style J fill:#333,stroke:#333,height:6px`}
+/>
+
+<MultipleChoice
+  question="In einem Diagramm hat eine Raute zwei eingehende und zwei ausgehende Pfeile. Was ist zu tun?"
+  options={[
+    {
+      text: 'Aufteilen in eine Zusammenführung und eine anschließende Entscheidung.',
+      correct: true,
+      explanation:
+        'Eine Raute erfüllt genau eine Aufgabe: entweder zusammenführen (n rein, 1 raus) oder entscheiden (1 rein, n raus). Beides in einem Symbol ist nicht zulässig.',
+    },
+    {
+      text: 'Nichts, das ist eine zulässige Kurzschreibweise.',
+      correct: false,
+      explanation:
+        'Die UML kennt diese Kurzform nicht. In der Korrektur gilt das als Notationsfehler.',
+    },
+    {
+      text: 'Die Raute durch einen Synchronisationsbalken ersetzen.',
+      correct: false,
+      explanation:
+        'Ein Balken bedeutet Parallelität - hier geht es aber um alternative Wege. Das würde die Aussage des Diagramms verändern.',
+    },
+    {
+      text: 'Die eingehenden Pfeile direkt mit den Aktionen dahinter verbinden.',
+      correct: false,
+      explanation:
+        'Damit ginge die Entscheidungslogik verloren. Die Bedingungen müssen weiterhin an einer Raute hängen.',
+    },
+  ]}
+/>
+
+<MultipleChoice
+  question="Welche Aussagen über Fork und Join sind richtig?"
+  options={[
+    {
+      text: 'Nach einem Fork laufen alle ausgehenden Stränge, nicht nur einer.',
+      correct: true,
+      explanation:
+        'Genau das unterscheidet den Fork von der Entscheidung: sowohl/als auch statt entweder/oder.',
+    },
+    {
+      text: 'Ein Join wartet, bis alle eingehenden Stränge angekommen sind.',
+      correct: true,
+      explanation:
+        'Deshalb heißt er Synchronisation. Wer nur auf den ersten Strang warten will, braucht eine Zusammenführung.',
+    },
+    {
+      text: 'An den ausgehenden Kanten eines Forks stehen Bedingungen.',
+      correct: false,
+      explanation:
+        'Bedingungen gehören an Entscheidungen. Ein Fork verzweigt bedingungslos - es laufen ohnehin alle Stränge.',
+    },
+    {
+      text: 'Ein Fork darf ohne zugehörigen Join enden.',
+      correct: false,
+      explanation:
+        'In aller Regel ist das ein Fehler: Ohne Join ist unklar, wann der gemeinsame Ablauf weitergeht. In Prüfungsaufgaben gehört zu jedem Fork ein Join.',
+    },
+  ]}
+/>
+
+<FreeText
+  question={
+    <>
+      Ein Aktivitätsdiagramm enthält eine Entscheidung mit den Ausgängen{' '}
+      <code>[Betrag &lt; 1000]</code> und <code>[Betrag &gt; 1000]</code>. Nenne den Fehler
+      und die Korrektur.
+    </>
+  }
+  solution={
+    <>
+      Die Bedingungen decken den Fall <code>Betrag = 1000</code> nicht ab – der Ablauf käme
+      dort zum Stillstand. Die Ausgänge einer Entscheidung müssen{' '}
+      <strong>vollständig</strong> (jeder mögliche Wert ist abgedeckt) und{' '}
+      <strong>disjunkt</strong> (kein Wert passt auf zwei Ausgänge) sein.
+      <br />
+      Korrektur: <code>[Betrag &lt; 1000]</code> und{' '}
+      <code>[Betrag &gt;= 1000]</code>. Alternativ den zweiten Ausgang mit{' '}
+      <code>[sonst]</code> beschriften – das ist zulässig und schließt Lücken sicher aus.
+    </>
+  }
+/>
+
+<Checklist
+  items={[
+    'Genau ein Startknoten vorhanden',
+    'Jeder Pfad endet in einem Endknoten',
+    'Jede Aktion ist als Tätigkeit benannt (Verb), nicht als Substantiv',
+    'Jeder Ausgang einer Entscheidung trägt eine Bedingung in eckigen Klammern',
+    'Bedingungen sind vollständig und überschneidungsfrei (notfalls [sonst])',
+    'Jede Raute ist entweder Entscheidung ODER Zusammenführung, nie beides',
+    'Zu jedem Fork gibt es einen Join',
+    'Fragt die Aufgabe nach Zuständigkeiten? Dann Partitionen zeichnen',
+  ]}
+/>

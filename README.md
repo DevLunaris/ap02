@@ -8,10 +8,13 @@ Fachinformatiker/-in Anwendungsentwicklung.
 SQL gegen eine echte Datenbank absetzen, C# kompilieren und gegen Testfälle prüfen.
 Alles auf der eigenen Maschine, ohne Account, ohne Tracking, ohne Cloud.
 
-> **Status: Alle drei Engines laufen.** Pseudocode Schritt für Schritt tracen, SQL gegen
-> echtes SQLite im Browser absetzen, C# kompilieren und gegen Testfälle prüfen – jeweils
-> mit automatischer Auswertung. Als Nächstes kommen ausgearbeitete Themen; bisher gibt es
-> ein Beispielthema. Siehe [Fahrplan](#fahrplan).
+> **Status: Engines laufen, drei Themen sind ausgearbeitet.** Pseudocode Schritt für
+> Schritt tracen, SQL gegen echtes SQLite im Browser absetzen, C# kompilieren und gegen
+> Testfälle prüfen – jeweils mit automatischer Auswertung. Ausgearbeitet sind
+> [Pseudocode](content/topics/pseudocode.mdx),
+> [SELECT-Abfragen](content/topics/sql-select.mdx) und
+> [Aktivitätsdiagramm](content/topics/aktivitaetsdiagramm.mdx); die übrigen 86 Themen sind
+> im Index angelegt und warten auf Inhalt. Siehe [Fahrplan](#fahrplan).
 
 ---
 
@@ -168,6 +171,11 @@ Beim Start läuft eine Validierung, die dich vor den typischen Fehlern schützt:
 Dateien, Slug-Tippfehler, Verweise auf nicht existierende Themen und Widersprüche
 zwischen Frontmatter und Index brechen mit einer klaren Meldung ab.
 
+`npm test` geht noch weiter und **führt jede Übung aus deinen MDX-Dateien wirklich aus**:
+Seed-Schema und Musterlösung müssen durchlaufen, eine SELECT-Lösung muss Zeilen liefern,
+und eine hinterlegte `expectedOutput` muss exakt zur tatsächlichen Ausgabe passen. Damit
+fällt eine kaputte Aufgabe beim Committen auf statt beim Lernen.
+
 Die vollständige Props-API aller Komponenten steht in **[CLAUDE.md](CLAUDE.md)**, und
 unter `/komponenten` rendert die laufende App jede Komponente einmal als lebenden
 Styleguide.
@@ -207,8 +215,8 @@ implementieren, fertig – keine UI-Komponente muss angefasst werden.
       55 Tests, Tracer-UI mit Wertetabelle, Auto-Play und Übungsmodus
 - [x] **Phase 3 – SQL- und C#-Engine:** sql.js und Monaco (beide selbst gehostet),
       Piston-Anbindung über `/api/run`
-- [ ] **Phase 4 – Musterthemen:** `pseudocode`, `sql-select`, `aktivitaetsdiagramm` als
-      Qualitätsmaßstab
+- [x] **Phase 4 – Musterthemen:** `pseudocode`, `sql-select` und `aktivitaetsdiagramm`
+      als Qualitätsmaßstab für alle weiteren Themen
 - [ ] **Phase 5 – Lern-Features:** Fortschritt im localStorage mit JSON-Export,
       Fokus-Modus, Übungspool, Volltextsuche, Tastaturkürzel
 

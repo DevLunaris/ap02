@@ -1,0 +1,324 @@
+---
+slug: sql-select
+title: SELECT-Abfragen
+summary: >-
+  Daten gezielt abfragen, filtern, gruppieren und sortieren. Zusammen mit
+  Pseudocode das Rückgrat von "Entwicklung und Umsetzung von Algorithmen".
+learningGoals:
+  - Eine SELECT-Abfrage aus einer deutschen Aufgabenstellung ableiten
+  - WHERE und HAVING sicher auseinanderhalten
+  - Mit COUNT, SUM, AVG, MIN und MAX gruppiert auswerten
+  - Die Auswertungsreihenfolge kennen und daraus typische Fehler erklären
+  - NULL-Werte korrekt behandeln
+related:
+  - sql-grundlagen
+  - sql-joins
+  - relationales-datenmodell
+  - sql-update
+---
+
+In der Prüfung bekommst du ein Tabellenschema und einen deutschen Satz wie „Geben Sie alle
+Mitarbeiter der Abteilung Vertrieb aus, sortiert nach Gehalt absteigend." Deine Aufgabe ist
+die Übersetzung in SQL. Das ist handwerklich – und genau deshalb zuverlässig zu üben.
+
+<Callout type="merksatz" title="Die eine Sache, die alles erklärt">
+  SQL wird **nicht** in der Reihenfolge ausgewertet, in der es dasteht. Wer die
+  tatsächliche Reihenfolge kennt, kann fast jede Stolperfalle dieses Themas selbst
+  herleiten – statt Regeln auswendig zu lernen.
+</Callout>
+
+## Kernbegriffe
+
+<TermGrid>
+  <TermCard term="Projektion">
+    Auswahl der **Spalten** – der Teil hinter `SELECT`. „Welche Angaben will ich sehen?"
+  </TermCard>
+  <TermCard term="Selektion">
+    Auswahl der **Zeilen** – der Teil hinter `WHERE`. „Welche Datensätze interessieren mich?"
+  </TermCard>
+  <TermCard term="Aggregatfunktion">
+    Verdichtet viele Zeilen zu einem Wert: `COUNT`, `SUM`, `AVG`, `MIN`, `MAX`.
+  </TermCard>
+  <TermCard term="Gruppierung">
+    `GROUP BY` bildet aus Zeilen mit gleichem Wert je eine Gruppe. Aggregatfunktionen
+    rechnen dann pro Gruppe statt über alles.
+  </TermCard>
+  <TermCard term="Alias">
+    Ersatzname für Spalte oder Tabelle, vergeben mit `AS`. Macht Ausgaben lesbar und
+    Abfragen kürzer.
+  </TermCard>
+  <TermCard term="NULL">
+    Kein Wert – nicht 0 und nicht leerer Text. „Unbekannt" ist die richtige Lesart.
+  </TermCard>
+</TermGrid>
+
+## Aufbau einer Abfrage
+
+```sql
+SELECT   spalten          -- was anzeigen?
+FROM     tabelle          -- woher?
+WHERE    bedingung        -- welche Zeilen?
+GROUP BY spalte           -- wie gruppieren?
+HAVING   bedingung        -- welche Gruppen?
+ORDER BY spalte [ASC|DESC]-- wie sortieren?
+LIMIT    n                -- wie viele?
+```
+
+Die Klauseln müssen **in dieser Reihenfolge** stehen. Merkhilfe: *SF WGHOL* –
+**S**elect **F**rom **W**here **G**roup **H**aving **O**rder **L**imit.
+
+## Die Auswertungsreihenfolge
+
+Und jetzt der entscheidende Punkt: Die Datenbank arbeitet in einer **anderen** Reihenfolge.
+
+<Diagram
+  caption="Reihenfolge, in der die Datenbank tatsächlich auswertet"
+  code={`flowchart LR
+    F["1 · FROM<br/>Tabellen laden"] --> W["2 · WHERE<br/>Zeilen filtern"]
+    W --> G["3 · GROUP BY<br/>Gruppen bilden"]
+    G --> H["4 · HAVING<br/>Gruppen filtern"]
+    H --> S["5 · SELECT<br/>Spalten wählen"]
+    S --> O["6 · ORDER BY<br/>sortieren"]
+    O --> L["7 · LIMIT<br/>kürzen"]`}
+/>
+
+Aus dieser einen Grafik folgen drei Prüfungsantworten:
+
+1. **Warum kann `WHERE` keine Aggregatfunktion?** Weil `WHERE` (Schritt 2) läuft, bevor
+   überhaupt Gruppen existieren (Schritt 3). `WHERE COUNT(*) > 2` ist deshalb ein Fehler –
+   dafür ist `HAVING` da.
+2. **Warum kann `WHERE` keinen Spalten-Alias nutzen?** Weil `SELECT` – wo der Alias
+   vergeben wird – erst Schritt 5 ist. `ORDER BY` darf ihn dagegen, es kommt danach.
+3. **Warum ist `WHERE` schneller als `HAVING`?** Weil es früher filtert und damit weniger
+   Zeilen durch die teure Gruppierung schleust.
+
+<Callout type="achtung" title="WHERE oder HAVING?">
+  `WHERE` filtert **Zeilen vor** der Gruppierung. `HAVING` filtert **Gruppen nach** der
+  Gruppierung. Faustregel: Steht in der Bedingung eine Aggregatfunktion, gehört sie in
+  `HAVING`. Sonst in `WHERE`.
+</Callout>
+
+## Zeilen auswählen mit WHERE
+
+| Operator | Bedeutung | Beispiel |
+| --- | --- | --- |
+| `=` `<>` | gleich, ungleich | `abteilung = 'IT'` |
+| `<` `>` `<=` `>=` | Vergleiche | `gehalt >= 4000` |
+| `BETWEEN … AND …` | Bereich, **beide Grenzen inklusive** | `gehalt BETWEEN 3000 AND 4000` |
+| `IN (…)` | einer aus einer Liste | `abteilung IN ('IT', 'Vertrieb')` |
+| `LIKE` | Textmuster: `%` beliebig viele, `_` genau eins | `name LIKE 'M%'` |
+| `IS NULL` / `IS NOT NULL` | kein Wert vorhanden | `vorgesetzter_id IS NULL` |
+| `AND` `OR` `NOT` | Verknüpfung | `gehalt > 4000 AND abteilung = 'IT'` |
+
+<Callout type="achtung" title="NULL vergleicht sich mit nichts">
+  `WHERE vorgesetzter_id = NULL` liefert **nie** eine Zeile – auch dann nicht, wenn der
+  Wert NULL ist. NULL bedeutet „unbekannt", und ob ein Unbekanntes gleich einem anderen
+  Unbekannten ist, kann die Datenbank nicht wissen. Richtig ist `IS NULL`.
+
+  Dieselbe Logik gilt bei `<>`: `WHERE abteilung <> 'IT'` lässt Zeilen mit
+  `abteilung = NULL` weg, obwohl sie „nicht IT" sind.
+</Callout>
+
+## Gruppieren und auswerten
+
+```sql
+SELECT   abteilung, COUNT(*) AS anzahl, AVG(gehalt) AS schnitt
+FROM     mitarbeiter
+GROUP BY abteilung
+HAVING   COUNT(*) > 1
+ORDER BY schnitt DESC;
+```
+
+Regel für `GROUP BY`: Jede Spalte im `SELECT`, die **nicht** in einer Aggregatfunktion
+steht, muss auch im `GROUP BY` stehen. Sonst wäre unklar, welchen der vielen Werte einer
+Gruppe die Datenbank zeigen soll.
+
+<Callout type="tipp" title="COUNT(*) oder COUNT(spalte)?">
+  `COUNT(*)` zählt **Zeilen**. `COUNT(spalte)` zählt nur Zeilen, in denen diese Spalte
+  **nicht NULL** ist. Bei zehn Mitarbeitern, von denen drei keinen Vorgesetzten haben,
+  liefert `COUNT(*)` also 10 und `COUNT(vorgesetzter_id)` nur 7. Ein beliebter Prüfungstest.
+</Callout>
+
+## Stolperfallen
+
+<Callout type="achtung" title="Die sechs teuersten Fehler">
+  1. **`WHERE` mit Aggregatfunktion** – gehört in `HAVING`.
+  2. **`= NULL` statt `IS NULL`** – liefert stumm ein leeres Ergebnis.
+  3. **Spalte im `SELECT` vergessen zu gruppieren** – bei Gruppierung muss jede nicht
+     aggregierte Spalte ins `GROUP BY`.
+  4. **`ORDER BY` vergessen**, obwohl „sortiert nach …" in der Aufgabe steht. Ohne
+     `ORDER BY` ist die Reihenfolge in SQL **nicht definiert** – auch wenn es zufällig passt.
+  5. **`ASC` und `DESC` verwechselt.** `ASC` (Standard) ist aufsteigend, `DESC` absteigend.
+     „Der beste zuerst" heißt fast immer `DESC`.
+  6. **Semikolon oder Anführungszeichen falsch.** Text steht in einfachen Anführungszeichen
+     (`'IT'`), Zahlen ohne.
+</Callout>
+
+## Übungen
+
+Alle Übungen arbeiten auf derselben Tabelle. Mit „Schema anzeigen" siehst du sie jederzeit.
+
+<SqlExercise
+  title="Übung 1: Filtern und sortieren"
+  task="Gib Name und Gehalt aller Mitarbeiter der Abteilung 'IT' aus, das höchste Gehalt zuerst."
+  schema={`CREATE TABLE mitarbeiter (
+  id              INTEGER PRIMARY KEY,
+  name            TEXT    NOT NULL,
+  abteilung       TEXT    NOT NULL,
+  gehalt          INTEGER NOT NULL,
+  eintritt        TEXT    NOT NULL,
+  vorgesetzter_id INTEGER
+);
+INSERT INTO mitarbeiter VALUES
+  (1, 'Meier',     'IT',       4200, '2019-03-01', 4),
+  (2, 'Schulz',    'Vertrieb', 3800, '2021-09-15', 5),
+  (3, 'Yildiz',    'IT',       4600, '2018-01-10', 4),
+  (4, 'Brandt',    'IT',       5900, '2015-06-01', NULL),
+  (5, 'Nowak',     'Vertrieb', 5100, '2017-11-20', NULL),
+  (6, 'Fischer',   'Vertrieb', 3400, '2022-04-01', 5),
+  (7, 'Aydin',     'Einkauf',  3900, '2020-08-03', NULL);`}
+  starter="SELECT "
+  hint="Zwei Klauseln brauchst du: eine für die Zeilenauswahl, eine für die Sortierung. Absteigend heißt DESC."
+  solution="SELECT name, gehalt FROM mitarbeiter WHERE abteilung = 'IT' ORDER BY gehalt DESC;"
+/>
+
+<SqlExercise
+  title="Übung 2: Gruppieren mit HAVING"
+  task="Gib je Abteilung den Namen, die Anzahl der Mitarbeiter und das Durchschnittsgehalt aus - aber nur für Abteilungen mit mehr als zwei Mitarbeitern."
+  schema={`CREATE TABLE mitarbeiter (
+  id              INTEGER PRIMARY KEY,
+  name            TEXT    NOT NULL,
+  abteilung       TEXT    NOT NULL,
+  gehalt          INTEGER NOT NULL,
+  eintritt        TEXT    NOT NULL,
+  vorgesetzter_id INTEGER
+);
+INSERT INTO mitarbeiter VALUES
+  (1, 'Meier',     'IT',       4200, '2019-03-01', 4),
+  (2, 'Schulz',    'Vertrieb', 3800, '2021-09-15', 5),
+  (3, 'Yildiz',    'IT',       4600, '2018-01-10', 4),
+  (4, 'Brandt',    'IT',       5900, '2015-06-01', NULL),
+  (5, 'Nowak',     'Vertrieb', 5100, '2017-11-20', NULL),
+  (6, 'Fischer',   'Vertrieb', 3400, '2022-04-01', 5),
+  (7, 'Aydin',     'Einkauf',  3900, '2020-08-03', NULL);`}
+  starter={`SELECT abteilung
+FROM mitarbeiter`}
+  hint="Die Bedingung enthält eine Aggregatfunktion - damit ist klar, ob sie in WHERE oder HAVING gehört."
+  solution={`SELECT abteilung, COUNT(*) AS anzahl, AVG(gehalt) AS schnitt
+FROM mitarbeiter
+GROUP BY abteilung
+HAVING COUNT(*) > 2;`}
+/>
+
+<SqlExercise
+  title="Übung 3: Die NULL-Falle"
+  task="Gib die Namen aller Mitarbeiter aus, die keinen Vorgesetzten haben."
+  schema={`CREATE TABLE mitarbeiter (
+  id              INTEGER PRIMARY KEY,
+  name            TEXT    NOT NULL,
+  abteilung       TEXT    NOT NULL,
+  gehalt          INTEGER NOT NULL,
+  eintritt        TEXT    NOT NULL,
+  vorgesetzter_id INTEGER
+);
+INSERT INTO mitarbeiter VALUES
+  (1, 'Meier',     'IT',       4200, '2019-03-01', 4),
+  (2, 'Schulz',    'Vertrieb', 3800, '2021-09-15', 5),
+  (3, 'Yildiz',    'IT',       4600, '2018-01-10', 4),
+  (4, 'Brandt',    'IT',       5900, '2015-06-01', NULL),
+  (5, 'Nowak',     'Vertrieb', 5100, '2017-11-20', NULL),
+  (6, 'Fischer',   'Vertrieb', 3400, '2022-04-01', 5),
+  (7, 'Aydin',     'Einkauf',  3900, '2020-08-03', NULL);`}
+  starter="SELECT name FROM mitarbeiter WHERE vorgesetzter_id = NULL;"
+  hint="Der Startpunkt ist absichtlich falsch. Führ ihn ruhig aus und schau, was passiert - dann korrigiere ihn."
+  solution="SELECT name FROM mitarbeiter WHERE vorgesetzter_id IS NULL;"
+/>
+
+<MultipleChoice
+  question="Welche Aussagen über WHERE und HAVING sind richtig?"
+  options={[
+    {
+      text: 'HAVING wird nach der Gruppierung ausgewertet, WHERE davor.',
+      correct: true,
+      explanation:
+        'Genau daraus folgt alles Weitere: WHERE ist Schritt 2, GROUP BY Schritt 3, HAVING Schritt 4.',
+    },
+    {
+      text: 'In WHERE darf keine Aggregatfunktion stehen.',
+      correct: true,
+      explanation:
+        'Zum Zeitpunkt von WHERE gibt es noch keine Gruppen, über die aggregiert werden könnte.',
+    },
+    {
+      text: 'HAVING kann nur zusammen mit GROUP BY verwendet werden.',
+      correct: false,
+      explanation:
+        'Ohne GROUP BY gilt die gesamte Tabelle als eine Gruppe - HAVING funktioniert dann trotzdem, z. B. HAVING COUNT(*) > 5. In Prüfungen kommt das selten vor, die Aussage ist aber falsch.',
+    },
+    {
+      text: 'WHERE ist bei gleichem Ergebnis effizienter als HAVING.',
+      correct: true,
+      explanation:
+        'WHERE filtert früher und schickt dadurch weniger Zeilen in die Gruppierung. Wenn beides möglich wäre, nimm WHERE.',
+    },
+  ]}
+/>
+
+<MultipleChoice
+  question="Die Tabelle hat 7 Zeilen, davon 3 mit vorgesetzter_id = NULL. Was liefert SELECT COUNT(vorgesetzter_id) FROM mitarbeiter?"
+  options={[
+    {
+      text: '4',
+      correct: true,
+      explanation:
+        'COUNT(spalte) zählt nur Zeilen, in denen die Spalte nicht NULL ist: 7 - 3 = 4.',
+    },
+    {
+      text: '7',
+      correct: false,
+      explanation: 'Das wäre COUNT(*) - das zählt Zeilen und ignoriert NULL-Werte nicht.',
+    },
+    {
+      text: '3',
+      correct: false,
+      explanation: 'Das ist die Anzahl der NULL-Werte, also genau das Gegenteil von dem, was COUNT zählt.',
+    },
+    {
+      text: 'NULL, weil NULL-Werte enthalten sind',
+      correct: false,
+      explanation:
+        'Aggregatfunktionen überspringen NULL-Werte einfach, statt selbst NULL zu liefern. Nur bei null Zeilen liefert z. B. AVG tatsächlich NULL.',
+    },
+  ]}
+/>
+
+<FreeText
+  question={
+    <>
+      Erkläre in zwei bis drei Sätzen, warum diese Abfrage einen Fehler ergibt:
+      <br />
+      <code>SELECT name, gehalt * 12 AS jahresgehalt FROM mitarbeiter WHERE jahresgehalt &gt; 50000;</code>
+    </>
+  }
+  solution={
+    <>
+      Der Alias <code>jahresgehalt</code> wird in der <code>SELECT</code>-Klausel vergeben,
+      und die wird erst in Schritt 5 ausgewertet – <code>WHERE</code> ist aber Schritt 2. Zu
+      diesem Zeitpunkt kennt die Datenbank den Namen noch nicht. Man muss den Ausdruck
+      wiederholen (<code>WHERE gehalt * 12 &gt; 50000</code>) oder eine Unterabfrage nutzen.
+      In <code>ORDER BY</code> wäre der Alias dagegen erlaubt, weil das erst Schritt 6 ist.
+    </>
+  }
+/>
+
+<Checklist
+  items={[
+    'Klauseln in der Reihenfolge SELECT - FROM - WHERE - GROUP BY - HAVING - ORDER BY',
+    'Bedingung mit Aggregatfunktion steht in HAVING, sonst in WHERE',
+    'Bei GROUP BY: jede nicht aggregierte SELECT-Spalte auch im GROUP BY',
+    'IS NULL statt = NULL verwendet',
+    'Steht "sortiert nach ..." in der Aufgabe? Dann ORDER BY - mit ASC oder DESC',
+    'Text in einfachen Anführungszeichen, Zahlen ohne',
+    'Abfrage einmal im Kopf gegen die Beispieldaten laufen lassen',
+  ]}
+/>
